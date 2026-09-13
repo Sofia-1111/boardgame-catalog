@@ -7,14 +7,75 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-   <!-- Шапка з навігацією та пошуком --> 
 
-   <!-- Блок фільтрів (кількість гравців, жанр) -->
+    <header>
+        <h1>Каталог настільних ігор</h1>
+        <nav>
+         <a href="#strategy">Стратегії</a>
+         <a href="#party">Для вечірок</a>
+         <a href="#family">Сімейні</a>
+        </nav>
+    </header>
 
-   <!-- Список карток ігор -->
+    <main>
 
-   <!-- Підвал -->
+        <section id="filters">
+            <h2>Фільтри</h2>
+            <form action="#" method="get">
+                <div>
+                 <label for="category-select">Категорія:</label>
+                 <select id="category-select" name="category">
+                 <option value="all">Всі категорії</option>
+                 <option value="strategy">Стратегії</option>
+                 <option value="party">Для вечірок</option>
+                 <option value="family">Сімейні</option>
+                 </select>
+                </div>
+                
+                <div>
+                 <label for="players-count">Кількість гравців:</label>
+                 <input type="number" id="players-count" name="players" min="1" max="10" placeholder="2">
+                </div>
 
+                <div>
+                 <label for="search-input">Пошук гри:</label>
+                 <input type="search" id="search-input" name="query" placeholder="Назва гри...">
+                </div>
+
+                <button type="submit">Застосувати фільтри</button>
+            </form>
+        </section>
+
+        <section id="games">
+         <h2>Ігри</h2>
+
+         <article id="strategy">
+          <h3>Каркасон</h3>
+          <img src="img/carcassonne.jpg" alt="Коробка настільної гри Каркасон">
+          <p>Класична стратегічна гра на викладання тайлів земель навколо середньовічного замку.</p>
+          <p>Кількість гравців: 2–5 | Тривалість: 35–45 хв</p>
+         </article>
+
+         <article id="party">
+          <h3>Кодові імена</h3>
+          <img src="img/codenames.jpg" alt="Коробка настільної гри Кодові імена">
+          <p>Командна гра у слова та асоціації, де капітани намагаються вивести своїх агентів на зв'язок.</p>
+          <p>Кількість гравців: 2–8 | Тривалість: 15–20 хв</p>
+         </article>
+
+         <article id="family">
+          <h3>Квиток на поїзд: Європа</h3>
+          <img src="img/ticket-to-ride.jpg" alt="Коробка настільної гри Квиток на поїзд: Європа">
+          <p>Захоплива сімейна пригода: збирайте картки вагонів та будуйте маршрути між містами.</p>
+          <p>Кількість гравців: 2–5 | Тривалість: 30–60 хв</p>
+         </article>
+        </section>
+
+        <footer>
+         <p>&copy; 2026 Каталог настільних ігор. Автор: Шаповал Софія, ІП-54.</p>
+        </footer>
+    </main>
+  
    <script src="js/app.js"></script>
 </body>
 </html>
