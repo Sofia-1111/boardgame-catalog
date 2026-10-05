@@ -1,0 +1,339 @@
+/* Крок 1. CSS-змінні: Колірна схема (правило 60-30-10) та Шрифтова пара */
+:root {
+  /* 60% — нейтральний фон сторінки та карток */
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+
+  /* 30% — структуруючий фірмовий колір (шапка, темні акценти) */
+  --color-primary: #312e81;
+
+  /* 10% — акцентний колір (кнопки, бейджі) з контрастом WCAG AA > 4.5:1 */
+  --color-accent: #c2410c;
+  --color-accent-hover: #9a3412;
+
+  /* Текстові кольори з високою контрастністю */
+  --text-main: #1e293b;
+  --text-muted: #475569;
+  --border-color: #cbd5e1;
+
+  /* Шрифтова пара: Comfortaa (грайливий заголовок) + Inter (нейтральний текст) */
+  --font-heading: 'Comfortaa', cursive, system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/*Базовий reset та захист зображень */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  background-color: var(--bg-main);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/*Header та Навігація */
+header {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding: 1.25rem 1rem;
+  border-bottom: 4px solid var(--color-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+header nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+header nav a {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* доступність натискання */
+  padding: 0 0.5rem;
+  transition: color 0.2s ease;
+}
+
+header nav a:hover {
+  color: #fde047;
+}
+
+/* Main та Секція фільтрів */
+main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+section {
+  margin-bottom: 3rem;
+}
+
+section h2 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  color: var(--color-primary);
+  border-left: 5px solid var(--color-accent);
+  padding-left: 0.75rem;
+}
+
+.filters-form {
+  background-color: var(--bg-surface);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filters-form label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.filters-form input,
+.filters-form select {
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  width: 100%;
+  min-height: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filters-form input:focus,
+.filters-form select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+/* 
+   Чітка вимога:
+   Кнопки фільтрів — контрастний акцентний колір (#ea580c),
+   область натискання мінімум 44х44px (touch target WCAG 2.5.5).
+*/
+.submit-btn {
+  background-color: var(--color-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px; /* мінімальна область натискання 44x44px */
+  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);
+}
+
+.submit-btn:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(234, 88, 12, 0.35);
+}
+
+/* Нечітка вимога:
+   «Має виглядати як каталог, яким приємно гортати» — грайлива округла
+   типографіка Comfortaa для жирних назв ігор проти нейтрального Inter для описів.
+   Бейджі кількості гравців/часу та плавний ефект підняття коробки при hover. */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.game-card {
+  background-color: var(--bg-surface);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 28px rgba(49, 46, 129, 0.12);
+}
+
+.game-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background-color: #f1f5f9;
+}
+
+.card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+/* Бейджі метаданих */
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.2px;
+}
+
+.badge--players {
+  background-color: #ffedd5;
+  color: #9a3412;
+}
+
+.badge--time {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Жирна назва гри з грайливим шрифтом Comfortaa */
+.game-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Нейтральний, легко читабельний опис Inter */
+.game-card p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.925rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.game-card .game-meta {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0d9488;
+}
+
+/* Footer */
+footer {
+  padding: 2rem 1rem;
+  background-color: #0f172a;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  text-align: center;
+  margin-top: 3rem;
+}
+
+/* Планшетний breakpoint (min-width: 600px) */
+@media (min-width: 600px) {
+  header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+  }
+
+  header h1 {
+    font-size: 1.8rem;
+  }
+
+  main {
+    padding: 2rem 1.5rem;
+  }
+
+  .filters-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+  }
+
+  .form-group {
+    flex: 1 1 180px;
+  }
+
+  .submit-btn {
+    align-self: flex-end;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Десктопний breakpoint (min-width: 1024px) */
+@media (min-width: 1024px) {
+  header h1 {
+    font-size: 2.1rem;
+  }
+
+  main {
+    padding: 2.5rem 2rem;
+  }
+
+  .cards {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+  }
+}

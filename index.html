@@ -4,17 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог настільних ігор</title>
+    <!-- Підключення шрифтів Comfortaa (заголовки) та Inter (основний текст) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-   <!-- Шапка з навігацією та пошуком --> 
 
-   <!-- Блок фільтрів (кількість гравців, жанр) -->
+    <header>
+        <h1>Каталог настільних ігор</h1>
+        <nav>
+            <ul>
+                <li><a href="#strategy">Стратегії</a></li>
+                <li><a href="#party">Для вечірок</a></li>
+                <li><a href="#family">Сімейні</a></li>
+            </ul>
+        </nav>
+    </header>
 
-   <!-- Список карток ігор -->
+    <main>
 
-   <!-- Підвал -->
+        <section id="filters">
+            <h2>Фільтри каталогу</h2>
+            <form action="#" method="get" class="filters-form">
+                <div class="form-group">
+                    <label for="category-select">Категорія:</label>
+                    <select id="category-select" name="category">
+                        <option value="all">Всі категорії</option>
+                        <option value="strategy">Стратегії</option>
+                        <option value="party">Для вечірок</option>
+                        <option value="family">Сімейні</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="players-count">Кількість гравців:</label>
+                    <input type="number" id="players-count" name="players" min="1" max="10" placeholder="2">
+                </div>
 
-   <script src="js/app.js"></script>
+                <div class="form-group">
+                    <label for="search-input">Пошук гри:</label>
+                    <input type="search" id="search-input" name="query" placeholder="Назва гри...">
+                </div>
+
+                <!-- Чітка вимога: кнопка з акцентним кольором та touch target ≥ 44x44px -->
+                <button type="submit" class="submit-btn">Застосувати фільтри</button>
+            </form>
+        </section>
+
+        <section id="games">
+            <h2>Популярні ігри</h2>
+
+            <div class="cards">
+                <article id="strategy" class="game-card">
+                    <img src="img/carcassonne.png" alt="Коробка настільної гри Каркасон">
+                    <div class="card-body">
+                        <div class="badge-group">
+                            <span class="badge badge--players">👥 2–5 гравців</span>
+                            <span class="badge badge--time">⏳ 35–45 хв</span>
+                        </div>
+                        <h3>Каркасон</h3>
+                        <p>Класична стратегічна гра на викладання тайлів земель навколо середньовічного замку.</p>
+                    </div>
+                </article>
+
+                <article id="party" class="game-card">
+                    <img src="img/codenames.jpg" alt="Коробка настільної гри Кодові імена">
+                    <div class="card-body">
+                        <div class="badge-group">
+                            <span class="badge badge--players">👥 2–8 гравців</span>
+                            <span class="badge badge--time">⏳ 15–20 хв</span>
+                        </div>
+                        <h3>Кодові імена</h3>
+                        <p>Командна гра у слова та асоціації, де капітани намагаються зв'язатися з агентами.</p>
+                    </div>
+                </article>
+
+                <article id="family" class="game-card">
+                    <img src="img/ticket-to-ride.jpg" alt="Коробка настільної гри Квиток на поїзд: Європа">
+                    <div class="card-body">
+                        <div class="badge-group">
+                            <span class="badge badge--players">👥 2–5 гравців</span>
+                            <span class="badge badge--time">⏳ 30–60 хв</span>
+                        </div>
+                        <h3>Квиток на поїзд: Європа</h3>
+                        <p>Захоплива сімейна пригода: збирайте картки вагонів та будуйте маршрути між містами.</p>
+                    </div>
+                </article>
+
+                <article id="catan" class="game-card">
+                    <img src="img/catan.jpg" alt="Коробка настільної гри Колонізатори">
+                    <div class="card-body">
+                        <div class="badge-group">
+                            <span class="badge badge--players">👥 3–4 гравці</span>
+                            <span class="badge badge--time">⏳ 60–90 хв</span>
+                        </div>
+                        <h3>Колонізатори (Catan)</h3>
+                        <p>Розвивайте поселення, добувайте ресурси та торгуйте на острові Катан.</p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer>
+        <p>&copy; 2026 Каталог настільних ігор. Автор: Шаповал Софія, ІП-54.</p>
+    </footer>
+  
 </body>
 </html>
