@@ -155,3 +155,105 @@ if (listContainer) {
 if (gamesCountElement) {
   gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
 }
+
+
+// ПРАКТИЧНА РОБОТА №8: Обробка подій та форми 
+
+// Крок 2. Вибір форми та елемента для помилки в DOM
+const addGameForm = document.querySelector('#add-game-form');
+const formError = document.querySelector('#form-error');
+
+if (addGameForm) {
+  addGameForm.addEventListener('submit', event => {
+    // Крок 3. Скасування стандартного перезавантаження сторінки
+    event.preventDefault();
+
+    // Скидання попередніх повідомлень про помилку
+    if (formError) {
+      formError.style.display = 'none';
+      formError.textContent = '';
+    }
+
+    // Крок 4. Зчитування значень полів форми
+    const titleInput = document.querySelector('#game-title');
+    const minPlayersInput = document.querySelector('#game-min-players');
+    const maxPlayersInput = document.querySelector('#game-max-players');
+    const genreSelect = document.querySelector('#game-genre');
+
+    const title = titleInput.value.trim();
+    const minPlayers = Number(minPlayersInput.value);
+    const maxPlayers = Number(maxPlayersInput.value);
+    const genre = genreSelect.value;
+
+    // Крок 8. Валідація: перевірка заповнення та minPlayers <= maxPlayers
+    if (!title || !minPlayers || !maxPlayers || !genre) {
+      if (formError) {
+        formError.textContent = 'Будь ласка, заповніть усі обов’язкові поля!';
+        formError.style.display = 'block';
+      }
+      return;
+    }
+
+    if (minPlayers > maxPlayers) {
+      if (formError) {
+        formError.textContent = 'Помилка валідації: мінімальна кількість гравців не може перевищувати максимальну!';
+        formError.style.display = 'block';
+      }
+      return;
+    }
+    
+    const placeholderSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23f1f3f5"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%23adb5bd">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="%23495057">${encodeURIComponent(title)}</text></svg>`;
+
+    // Крок 5. Створення нового об'єкта гри та додавання його в масив (push)
+    const newGame = {
+      id: `game-${Date.now()}`,
+      title: title,
+      minPlayers: minPlayers,
+      maxPlayers: maxPlayers,
+      time: '30–60 хв',
+      image: placeholderSvg, 
+      alt: `Обкладинка настільної гри ${title}`,
+      description: `Жанр: ${genre}. Нова захоплива гра для дружньої компанії.`
+    };
+
+    boardGames.push(newGame);
+
+    // Крок 6. Перемалювання списку ігор та оновлення лічильника
+    renderGames(boardGames);
+    if (gamesCountElement) {
+      gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
+    }
+
+    // Крок 7. Очищення форми після успішного додавання
+    addGameForm.reset();
+  });
+}
+
+// Крок 9 Друга подія — change на селектор кількості гравців
+// Перефільтровує список через fitsPlayers і рендерить лише придатні ігри
+const filterPlayersSelect = document.querySelector('#filter-players-select');
+
+if (filterPlayersSelect) {
+  filterPlayersSelect.addEventListener('change', event => {
+    const selectedValue = event.target.value;
+
+    if (selectedValue === 'all') {
+      // Відображаємо всі доступні ігри
+      renderGames(boardGames);
+      if (gamesCountElement) {
+        gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
+      }
+    } else {
+      // Фільтруємо масив за допомогою стрілкової функції fitsPlayers
+      const targetPlayersCount = Number(selectedValue);
+      const suitableGames = boardGames.filter(game => fitsPlayers(game, targetPlayersCount));
+
+      // Перемальовуємо каталог лише з відфільтрованими картками
+      renderGames(suitableGames);
+
+      if (gamesCountElement) {
+        gamesCountElement.textContent = `Знайдено для ${targetPlayersCount} гравців: ${suitableGames.length}`;
+      }
+    }
+  });
+}

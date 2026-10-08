@@ -39,9 +39,18 @@
                     </select>
                 </div>
                 
+                <!-- Оновлено на select для обробки події change за Варіантом №4 -->
                 <div class="form-group">
-                    <label for="players-count">Кількість гравців:</label>
-                    <input type="number" id="players-count" name="players" min="1" max="10" placeholder="2">
+                    <label for="filter-players-select">Кількість гравців:</label>
+                    <select id="filter-players-select" name="players">
+                        <option value="all">Усі варіанти</option>
+                        <option value="2">Для 2 гравців</option>
+                        <option value="3">Для 3 гравців</option>
+                        <option value="4">Для 4 гравців</option>
+                        <option value="5">Для 5 гравців</option>
+                        <option value="6">Для 6+ гравців</option>
+                        <option value="8">Для 8 гравців</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -49,8 +58,44 @@
                     <input type="search" id="search-input" name="query" placeholder="Назва гри...">
                 </div>
 
-                <!-- Чітка вимога: кнопка з акцентним кольором та touch target ≥ 44x44px -->
                 <button type="submit" class="submit-btn">Застосувати фільтри</button>
+            </form>
+        </section>
+
+        <!-- Крок 1 Секція форми додавання нової гри  -->
+        <section id="add-game-section">
+            <h2>Додати нову настільну гру</h2>
+            <form id="add-game-form" class="filters-form" novalidate>
+                <div class="form-group">
+                    <label for="game-title">Назва гри:</label>
+                    <input type="text" id="game-title" name="title" placeholder="Наприклад, Еволюція" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="game-min-players">Мін. кількість гравців:</label>
+                    <input type="number" id="game-min-players" name="minPlayers" min="1" max="20" placeholder="2" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="game-max-players">Макс. кількість гравців:</label>
+                    <input type="number" id="game-max-players" name="maxPlayers" min="1" max="20" placeholder="4" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="game-genre">Жанр гри:</label>
+                    <select id="game-genre" name="genre" required>
+                        <option value="">Оберіть жанр</option>
+                        <option value="strategy">Стратегія</option>
+                        <option value="party">Для вечірок</option>
+                        <option value="family">Сімейні</option>
+                        <option value="adventure">Пригоди</option>
+                    </select>
+                </div>
+
+                <!-- Текстовий блок для виведення помилки валідації (minPlayers <= maxPlayers) -->
+                <p id="form-error" class="form-error" style="color: #c92a2a; margin-top: 8px; font-weight: 500; display: none;"></p>
+
+                <button type="submit" class="submit-btn">Додати гру до каталогу</button>
             </form>
         </section>
 
