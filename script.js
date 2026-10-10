@@ -257,3 +257,80 @@ if (filterPlayersSelect) {
     }
   });
 }
+
+// ПРАКТИЧНА РОБОТА №9: Клієнт для відомого API (fetch/AJAX)
+
+// Крок 3: Константа ендпоінта за Варіантом №4
+const API_URL = 'https://jsonplaceholder.typicode.com/todos?userId=1';
+
+// Отримання посилань на елементи статусу та помилки
+const loadingStatus = document.querySelector('#loading-status');
+const apiError = document.querySelector('#api-error');
+const reloadBtn = document.querySelector('#reload-btn');
+
+async function loadGamesFromAPI() {
+  // Крок 7: Вмикаємо стан завантаження та приховуємо старі помилки
+  if (loadingStatus) loadingStatus.style.display = 'block';
+  if (apiError) {
+    apiError.style.display = 'none';
+    apiError.textContent = '';
+  }
+
+  try {
+    const response = await fetch(API_URL);
+
+    if (!response.ok) {
+      throw new Error(`Сервер відповів кодом помилки: ${response.status}`);
+    }
+
+    // Крок 5: Отримання та розбір JSON-відповіді
+    const rawData = await response.json();
+    console.log('Отримані дані з API:', rawData);
+
+    // Крок 6: Мапінг Полів згідно з Варіантом №4
+    const apiGames = rawData.map(item => ({
+      id: `api-${item.id}`,
+      title: item.title,
+      minPlayers: 2,
+      maxPlayers: 6,
+      time: '30–45 хв',
+      image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23f1f3f5"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%23adb5bd">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%23495057">${encodeURIComponent(item.title.slice(0, 18))}</text></svg>`,
+      alt: `Обкладинка гри ${item.title}`,
+      description: item.completed 
+        ? 'Статус:  Вже зіграно спільнотою' 
+        : 'Статус:  У планах на майбутні партії'
+    }));
+
+    // Оновлюємо масив даних та викликаємо функцію рендеру з ЛР7
+    boardGames.length = 0;
+    boardGames.push(...apiGames);
+
+    renderGames(boardGames);
+
+    // Оновлюємо лічильник ігор на сторінці
+    if (gamesCountElement) {
+      gamesCountElement.textContent = `Усього ігор завантажено з API: ${boardGames.length}`;
+    }
+
+  } catch (error) {
+    // Крок 8. Обробка помилки
+    console.error('Детальні відомості про помилку:', error);
+    if (apiError) {
+      apiError.textContent = 'Не вдалося завантажити дані з сервера. Перевірте з’єднання з інтернетом або спробуйте пізніше.';
+      apiError.style.display = 'block';
+    }
+  } finally {
+    // Крок 7: Вимикаємо стан завантаження в будь-якому випадку
+    if (loadingStatus) loadingStatus.style.display = 'none';
+  }
+}
+
+// Крок 10: Прив'язка кнопки «Оновити»
+if (reloadBtn) {
+  reloadBtn.addEventListener('click', () => {
+    loadGamesFromAPI();
+  });
+}
+
+// Автоматичний виклик при завантаженні сторінки
+loadGamesFromAPI();

@@ -62,7 +62,7 @@
             </form>
         </section>
 
-        <!-- Крок 1 Секція форми додавання нової гри  -->
+        <!-- Секція форми додавання нової гри (ЛР8) -->
         <section id="add-game-section">
             <h2>Додати нову настільну гру</h2>
             <form id="add-game-form" class="filters-form" novalidate>
@@ -92,7 +92,7 @@
                     </select>
                 </div>
 
-                <!-- Текстовий блок для виведення помилки валідації (minPlayers <= maxPlayers) -->
+                <!-- Текстовий блок для виведення помилки валідації -->
                 <p id="form-error" class="form-error" style="color: #c92a2a; margin-top: 8px; font-weight: 500; display: none;"></p>
 
                 <button type="submit" class="submit-btn">Додати гру до каталогу</button>
@@ -100,57 +100,22 @@
         </section>
 
         <section id="games">
-            <h2>Популярні ігри</h2>
+            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px;">
+                <h2>Популярні ігри (API)</h2>
+                <!-- ЛР9 (Крок 10): Кнопка повторного завантаження даних -->
+                <button id="reload-btn" class="submit-btn" style="padding: 8px 16px; width: auto;">🔄 Оновити з API</button>
+            </div>
+
+            <!-- ЛР9 (Крок 7): Індикатор завантаження -->
+            <p id="loading-status" style="display: none; color: #2b6cb0; font-weight: 600;">⏳ Завантаження даних із сервера...</p>
+
+            <!-- ЛР9 (Крок 8): Повідомлення про помилку -->
+            <p id="api-error" style="display: none; color: #c92a2a; font-weight: 600; padding: 10px; background: #ffe3e3; border-radius: 8px; margin-bottom: 12px;"></p>
+
             <p id="games-count">Завантаження каталогу...</p>
 
             <div id="games-list" class="cards">
-                <article id="strategy" class="game-card">
-                    <img src="img/carcassonne.png" alt="Коробка настільної гри Каркасон">
-                    <div class="card-body">
-                        <div class="badge-group">
-                            <span class="badge badge--players">👥 2–5 гравців</span>
-                            <span class="badge badge--time">⏳ 35–45 хв</span>
-                        </div>
-                        <h3>Каркасон</h3>
-                        <p>Класична стратегічна гра на викладання тайлів земель навколо середньовічного замку.</p>
-                    </div>
-                </article>
-
-                <article id="party" class="game-card">
-                    <img src="img/codenames.jpg" alt="Коробка настільної гри Кодові імена">
-                    <div class="card-body">
-                        <div class="badge-group">
-                            <span class="badge badge--players">👥 2–8 гравців</span>
-                            <span class="badge badge--time">⏳ 15–20 хв</span>
-                        </div>
-                        <h3>Кодові імена</h3>
-                        <p>Командна гра у слова та асоціації, де капітани намагаються зв'язатися з агентами.</p>
-                    </div>
-                </article>
-
-                <article id="family" class="game-card">
-                    <img src="img/ticket-to-ride.jpg" alt="Коробка настільної гри Квиток на поїзд: Європа">
-                    <div class="card-body">
-                        <div class="badge-group">
-                            <span class="badge badge--players">👥 2–5 гравців</span>
-                            <span class="badge badge--time">⏳ 30–60 хв</span>
-                        </div>
-                        <h3>Квиток на поїзд: Європа</h3>
-                        <p>Захоплива сімейна пригода: збирайте картки вагонів та будуйте маршрути між містами.</p>
-                    </div>
-                </article>
-
-                <article id="catan" class="game-card">
-                    <img src="img/catan.jpg" alt="Коробка настільної гри Колонізатори">
-                    <div class="card-body">
-                        <div class="badge-group">
-                            <span class="badge badge--players">👥 3–4 гравці</span>
-                            <span class="badge badge--time">⏳ 60–90 хв</span>
-                        </div>
-                        <h3>Колонізатори (Catan)</h3>
-                        <p>Розвивайте поселення, добувайте ресурси та торгуйте на острові Катан.</p>
-                    </div>
-                </article>
+                <!-- Картки будуть згенеровані динамічно через script.js -->
             </div>
         </section>
 
