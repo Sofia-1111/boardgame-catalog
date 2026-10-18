@@ -1,13 +1,14 @@
 // Підтвердження успішного завантаження та виконання зовнішнього скрипта
 console.log('script.js підключено');
 
-// Вихідні дані: масив об'єктів з усіма полями з розмітки
+// Вихідні дані: масив об'єктів з усіма полями з розмітки (ЛР6)
 const boardGames = [
   {
     id: 'strategy',
     title: 'Каркасон',
     minPlayers: 2,
     maxPlayers: 5,
+    genre: 'Стратегія',
     time: '35–45 хв',
     image: 'img/carcassonne.png',
     alt: 'Коробка настільної гри Каркасон',
@@ -18,6 +19,7 @@ const boardGames = [
     title: 'Кодові імена',
     minPlayers: 2,
     maxPlayers: 8,
+    genre: 'Для вечірок',
     time: '15–20 хв',
     image: 'img/codenames.jpg',
     alt: 'Коробка настільної гри Кодові імена',
@@ -28,6 +30,7 @@ const boardGames = [
     title: 'Квиток на поїзд: Європа',
     minPlayers: 2,
     maxPlayers: 5,
+    genre: 'Сімейні',
     time: '30–60 хв',
     image: 'img/ticket-to-ride.jpg',
     alt: 'Коробка настільної гри Квиток на поїзд: Європа',
@@ -38,6 +41,7 @@ const boardGames = [
     title: 'Колонізатори (Catan)',
     minPlayers: 3,
     maxPlayers: 4,
+    genre: 'Стратегія',
     time: '60–90 хв',
     image: 'img/catan.jpg',
     alt: 'Коробка настільної гри Колонізатори',
@@ -51,11 +55,9 @@ console.log(`Загальна кількість ігор у масиві: ${boa
 // Стрілкова функція варіанта №4 для перевірки діапазону гравців
 const fitsPlayers = (game, n) => n >= game.minPlayers && n <= game.maxPlayers;
 
-// Консольний пошук та фільтрація
-
+// Консольний пошук та фільтрація (ЛР6)
 function filterGamesByPlayers(gamesList, targetPlayers) {
   console.log(`\n Пошук ігор для компанії: ${targetPlayers} гравців `);
-
   let suitableCount = 0;
 
   for (const game of gamesList) {
@@ -78,42 +80,171 @@ filterGamesByPlayers(boardGames, 4);
 filterGamesByPlayers(boardGames, 7);
 filterGamesByPlayers(boardGames, 1);
 
-// Крок 3. Вибір цільового контейнера списку та підсумкового елемента
+
+// ==========================================================================
+// ПРАКТИЧНА РОБОТА №10: Клієнтське програмування з фреймворком Vue 3
+//
+// Крок 1 (Обґрунтування):
+// Обрано фреймворк Vue 3 (підключений через CDN), оскільки він забезпечує 
+// зручну декларативну реактивність, лаконічний синтаксис шаблонів (v-for, v-on) 
+// та просту систему передачі даних через props й події ($emit) без необхідності 
+// налаштування складного середовища збірки (Node.js/Vite).
+// ==========================================================================
+
+const API_URL = 'https://jsonplaceholder.typicode.com/todos?userId=1';
+
+// --------------------------------------------------------------------------
+// Крок 4 & 6: Дочірній компонент GameCard 
+// Props: title, minPlayers, maxPlayers, genre (+ додаткові поля)
+// Подія: клік по жанру передає $emit('filter', genre) батьківському компоненту
+// --------------------------------------------------------------------------
+const GameCard = {
+  name: 'GameCard',
+  props: ['title', 'minPlayers', 'maxPlayers', 'genre', 'description', 'image'],
+  emits: ['filter'],
+  template: `
+    <article class="game-card">
+      <img :src="image" :alt="'Обкладинка гри ' + title">
+      <div class="card-body">
+        <div class="badge-group">
+          <span class="badge badge--players">👥 {{ minPlayers }}–{{ maxPlayers }} гравців</span>
+          
+          <!-- Крок 6: Інтерактивна подія варианту. Клік по плашці жанру викликає подію filter -->
+          <span 
+            class="badge badge--time" 
+            style="cursor: pointer; background: #e2e8f0; color: #2d3748; font-weight: 600;"
+            title="Натисніть для фільтрації за цим жанром"
+            @click="$emit('filter', genre)"
+          >
+            🏷️ {{ genre }}
+          </span>
+        </div>
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
+      </div>
+    </article>
+  `
+};
+
+// --------------------------------------------------------------------------
+// Крок 3, 5, 8: Головний екземпляр Vue-застосунку
+// --------------------------------------------------------------------------
+const { createApp } = Vue;
+
+const app = createApp({
+  data() {
+    return {
+      // Крок 3: Перенесення даних у реактивний стан
+      games: [],
+      selectedGenre: 'all',
+      loading: false,
+      errorMessage: ''
+    };
+  },
+  computed: {
+    // Похідне значення: автоматично фільтрує масив ігор залежно від обраного жанру
+    filteredGames() {
+      if (this.selectedGenre === 'all') {
+        return this.games;
+      }
+      return this.games.filter(game => game.genre === this.selectedGenre);
+    }
+  },
+  methods: {
+    // Отримання даних з API (інтеграція з ЛР9 в реактивний стан)
+    async loadGamesFromAPI() {
+      this.loading = true;
+      this.errorMessage = '';
+
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error(`Сервер відповів кодом помилки: ${response.status}`);
+        }
+
+        const rawData = await response.json();
+        console.log('Отримані дані з API (Vue):', rawData);
+
+        // Список жанрів для перевірки реактивної фільтрації Варіанта №4
+        const genres = ['Стратегія', 'Для вечірок', 'Сімейні', 'Пригоди'];
+
+        // Мапінг масиву даних з API у масив реактивного стану
+        this.games = rawData.map((item, index) => ({
+          id: `api-${item.id}`,
+          title: item.title,
+          minPlayers: 2,
+          maxPlayers: 6,
+          genre: genres[index % genres.length],
+          image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23f1f3f5"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%23adb5bd">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%23495057">${encodeURIComponent(item.title.slice(0, 18))}</text></svg>`,
+          description: item.completed 
+            ? 'Статус: ✅ Вже зіграно спільнотою' 
+            : 'Статус: 📌 У планах на майбутні партії'
+        }));
+
+      } catch (error) {
+        console.error('Помилка завантаження даних:', error);
+        this.errorMessage = 'Не вдалося завантажити дані з сервера. Перевірте з’єднання з інтернетом.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Крок 6: Метод-обробник події, що отримує жанр з компонента GameCard і оновлює стан
+    filterByGenre(genre) {
+      this.selectedGenre = genre;
+    },
+
+    // Скидання фільтрації
+    resetFilter() {
+      this.selectedGenre = 'all';
+    }
+  },
+  mounted() {
+    // Автоматично завантажуємо дані з API при старті Vue
+    this.loadGamesFromAPI();
+  }
+});
+
+// Глобальна реєстрація компонента та монтування
+app.component('game-card', GameCard);
+app.mount('#app');
+
+
+// ==========================================================================
+// Крок 7: Прибрати ручний DOM-код
+//
+// Нижче наведено функції ручного DOM-рендеру та обробники подій з ЛР7–ЛР9. 
+// За вимогами Кроку 7 їх закоментовано, оскільки ручний рендеринг через 
+// createElement / innerHTML / querySelector для цієї ділянки повністю замінено 
+// реактивним компонентним підходом Vue 3.
+// ==========================================================================
+
+/*
+// Крок 3. Вибір цільового контейнера списку та підсумкового елемента (ЛР7)
 const listContainer = document.querySelector('#games-list');
 const gamesCountElement = document.querySelector('#games-count');
 
-// Крок 2. Очищення початкового вмісту контейнера перед створенням нових карток
-if (listContainer) {
-  listContainer.innerHTML = '';
-}
-
-// Крок 4. Функція динамічного рендерингу списку карток
+// Крок 4. Функція динамічного рендерингу списку карток (ЛР7)
 function renderGames(games) {
+  if (!listContainer) return;
   listContainer.innerHTML = '';
 
-  // Крок 5. Створення повноцінної картки для кожної гри
   games.forEach(game => {
-    // Кореневий елемент article з класом та id
     const card = document.createElement('article');
     card.id = game.id;
     card.classList.add('game-card');
-
-    // Крок 6. Додавання data-атрибута та умовного класу fits (для 4 гравців)
     card.dataset.players = `${game.minPlayers}-${game.maxPlayers}`;
     if (fitsPlayers(game, 4)) {
       card.classList.add('fits');
     }
 
-    // 2. Зображення обкладинки
     const img = document.createElement('img');
     img.src = game.image;
     img.alt = game.alt;
 
-    // 3. Контейнер card-body
     const cardBody = document.createElement('div');
     cardBody.classList.add('card-body');
 
-    // 4. Група беджів
     const badgeGroup = document.createElement('div');
     badgeGroup.classList.add('badge-group');
 
@@ -127,54 +258,32 @@ function renderGames(games) {
 
     badgeGroup.append(badgePlayers, badgeTime);
 
-    // 5. Заголовок гри
     const title = document.createElement('h3');
     title.textContent = game.title;
 
-    // 6. Опис гри
     const desc = document.createElement('p');
     desc.textContent = game.description;
 
-    // Збираємо тіло картки
     cardBody.append(badgeGroup, title, desc);
-
-    // Збираємо картку разом із картинкою
     card.append(img, cardBody);
 
-    // Крок 7. Додаємо картку в контейнер на сторінці
     listContainer.append(card);
   });
 }
 
-// Крок 8. Виклик функції рендерингу при завантаженні
-if (listContainer) {
-  renderGames(boardGames);
-}
-
-// Крок 9. Оновлення підсумкового елемента (лічильника)
-if (gamesCountElement) {
-  gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
-}
-
-
-// ПРАКТИЧНА РОБОТА №8: Обробка подій та форми 
-
-// Крок 2. Вибір форми та елемента для помилки в DOM
+// ПРАКТИЧНА РОБОТА №8: Обробка подій та форми
 const addGameForm = document.querySelector('#add-game-form');
 const formError = document.querySelector('#form-error');
 
 if (addGameForm) {
   addGameForm.addEventListener('submit', event => {
-    // Крок 3. Скасування стандартного перезавантаження сторінки
     event.preventDefault();
 
-    // Скидання попередніх повідомлень про помилку
     if (formError) {
       formError.style.display = 'none';
       formError.textContent = '';
     }
 
-    // Крок 4. Зчитування значень полів форми
     const titleInput = document.querySelector('#game-title');
     const minPlayersInput = document.querySelector('#game-min-players');
     const maxPlayersInput = document.querySelector('#game-max-players');
@@ -185,7 +294,6 @@ if (addGameForm) {
     const maxPlayers = Number(maxPlayersInput.value);
     const genre = genreSelect.value;
 
-    // Крок 8. Валідація: перевірка заповнення та minPlayers <= maxPlayers
     if (!title || !minPlayers || !maxPlayers || !genre) {
       if (formError) {
         formError.textContent = 'Будь ласка, заповніть усі обов’язкові поля!';
@@ -204,12 +312,12 @@ if (addGameForm) {
     
     const placeholderSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23f1f3f5"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%23adb5bd">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="%23495057">${encodeURIComponent(title)}</text></svg>`;
 
-    // Крок 5. Створення нового об'єкта гри та додавання його в масив (push)
     const newGame = {
       id: `game-${Date.now()}`,
       title: title,
       minPlayers: minPlayers,
       maxPlayers: maxPlayers,
+      genre: genre,
       time: '30–60 хв',
       image: placeholderSvg, 
       alt: `Обкладинка настільної гри ${title}`,
@@ -217,120 +325,8 @@ if (addGameForm) {
     };
 
     boardGames.push(newGame);
-
-    // Крок 6. Перемалювання списку ігор та оновлення лічильника
     renderGames(boardGames);
-    if (gamesCountElement) {
-      gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
-    }
-
-    // Крок 7. Очищення форми після успішного додавання
     addGameForm.reset();
   });
 }
-
-// Крок 9 Друга подія — change на селектор кількості гравців
-// Перефільтровує список через fitsPlayers і рендерить лише придатні ігри
-const filterPlayersSelect = document.querySelector('#filter-players-select');
-
-if (filterPlayersSelect) {
-  filterPlayersSelect.addEventListener('change', event => {
-    const selectedValue = event.target.value;
-
-    if (selectedValue === 'all') {
-      // Відображаємо всі доступні ігри
-      renderGames(boardGames);
-      if (gamesCountElement) {
-        gamesCountElement.textContent = `Усього ігор у каталозі: ${boardGames.length}`;
-      }
-    } else {
-      // Фільтруємо масив за допомогою стрілкової функції fitsPlayers
-      const targetPlayersCount = Number(selectedValue);
-      const suitableGames = boardGames.filter(game => fitsPlayers(game, targetPlayersCount));
-
-      // Перемальовуємо каталог лише з відфільтрованими картками
-      renderGames(suitableGames);
-
-      if (gamesCountElement) {
-        gamesCountElement.textContent = `Знайдено для ${targetPlayersCount} гравців: ${suitableGames.length}`;
-      }
-    }
-  });
-}
-
-// ПРАКТИЧНА РОБОТА №9: Клієнт для відомого API (fetch/AJAX)
-
-// Крок 3: Константа ендпоінта за Варіантом №4
-const API_URL = 'https://jsonplaceholder.typicode.com/todos?userId=1';
-
-// Отримання посилань на елементи статусу та помилки
-const loadingStatus = document.querySelector('#loading-status');
-const apiError = document.querySelector('#api-error');
-const reloadBtn = document.querySelector('#reload-btn');
-
-async function loadGamesFromAPI() {
-  // Крок 7: Вмикаємо стан завантаження та приховуємо старі помилки
-  if (loadingStatus) loadingStatus.style.display = 'block';
-  if (apiError) {
-    apiError.style.display = 'none';
-    apiError.textContent = '';
-  }
-
-  try {
-    const response = await fetch(API_URL);
-
-    if (!response.ok) {
-      throw new Error(`Сервер відповів кодом помилки: ${response.status}`);
-    }
-
-    // Крок 5: Отримання та розбір JSON-відповіді
-    const rawData = await response.json();
-    console.log('Отримані дані з API:', rawData);
-
-    // Крок 6: Мапінг Полів згідно з Варіантом №4
-    const apiGames = rawData.map(item => ({
-      id: `api-${item.id}`,
-      title: item.title,
-      minPlayers: 2,
-      maxPlayers: 6,
-      time: '30–45 хв',
-      image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23f1f3f5"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%23adb5bd">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%23495057">${encodeURIComponent(item.title.slice(0, 18))}</text></svg>`,
-      alt: `Обкладинка гри ${item.title}`,
-      description: item.completed 
-        ? 'Статус:  Вже зіграно спільнотою' 
-        : 'Статус:  У планах на майбутні партії'
-    }));
-
-    // Оновлюємо масив даних та викликаємо функцію рендеру з ЛР7
-    boardGames.length = 0;
-    boardGames.push(...apiGames);
-
-    renderGames(boardGames);
-
-    // Оновлюємо лічильник ігор на сторінці
-    if (gamesCountElement) {
-      gamesCountElement.textContent = `Усього ігор завантажено з API: ${boardGames.length}`;
-    }
-
-  } catch (error) {
-    // Крок 8. Обробка помилки
-    console.error('Детальні відомості про помилку:', error);
-    if (apiError) {
-      apiError.textContent = 'Не вдалося завантажити дані з сервера. Перевірте з’єднання з інтернетом або спробуйте пізніше.';
-      apiError.style.display = 'block';
-    }
-  } finally {
-    // Крок 7: Вимикаємо стан завантаження в будь-якому випадку
-    if (loadingStatus) loadingStatus.style.display = 'none';
-  }
-}
-
-// Крок 10: Прив'язка кнопки «Оновити»
-if (reloadBtn) {
-  reloadBtn.addEventListener('click', () => {
-    loadGamesFromAPI();
-  });
-}
-
-// Автоматичний виклик при завантаженні сторінки
-loadGamesFromAPI();
+*/
