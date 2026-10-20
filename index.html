@@ -10,8 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Крок 2: Підключення Vue 3 через CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Підключення Vue 3 через CDN -->
+   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+  window.__VUE_DEVTOOLS_GLOBAL_HOOK__ && window.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue;
+</script>
     <script src="script.js" defer></script>
 </head>
 <body>
@@ -30,6 +33,39 @@
     <!-- Головний контейнер Vue-застосунку -->
     <main id="app">
 
+        <!-- Форма додавання нової гри -->
+        <section id="add-game" style="margin-bottom: 30px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h2>Додати нову гру в каталог</h2>
+            <form @submit.prevent="handleAddGame" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 12px;">
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px;">Назва гри:</label>
+                    <input type="text" v-model="newTitle" placeholder="Наприклад, Монополія" required style="padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px;">Мін. гравців:</label>
+                    <input type="number" v-model="newMinPlayers" min="1" required style="padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; width: 90px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px;">Макс. гравців:</label>
+                    <input type="number" v-model="newMaxPlayers" min="1" required style="padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; width: 90px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px;">Жанр:</label>
+                    <select v-model="newGenre" style="padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                        <option value="Стратегія">Стратегія</option>
+                        <option value="Для вечірок">Для вечірок</option>
+                        <option value="Сімейні">Сімейні</option>
+                        <option value="Пригоди">Пригоди</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn" style="padding: 9px 18px; width: auto; background: #3182ce; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">➕ Додати гру</button>
+            </form>
+            
+            <p v-if="formError" style="color: #e53e3e; font-weight: 600; margin-top: 10px; font-size: 14px;">
+                {{ formError }}
+            </p>
+        </section>
+
         <!-- Секція каталогу ігор під управлінням Vue 3 -->
         <section id="games">
             <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
@@ -37,7 +73,7 @@
                 
                 <div style="display: flex; gap: 8px;">
                     <!-- Повторний виклик завантаження з API через Vue -->
-                    <button @click="loadGamesFromAPI" class="submit-btn" style="padding: 8px 16px; width: auto;">🔄 Оновити з API</button>
+                    <button @click="loadGamesFromAPI" class="submit-btn" style="padding: 8px 16px; width: auto; background: #3182ce;">🔄 Завантажити ще з API</button>
                     <!-- Скидання фільтру -->
                     <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568;">❌ Скинути фільтр</button>
                 </div>
@@ -57,11 +93,12 @@
                 <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
             </p>
 
-            <!-- Крок 5: Декларативний рендер списку компонентом GameCard -->
+            <!-- Декларативний рендер списку компонентом GameCard -->
             <div id="games-list" class="cards">
                 <game-card 
                     v-for="game in filteredGames" 
                     :key="game.id"
+                    :id="game.id"
                     :title="game.title"
                     :min-players="game.minPlayers"
                     :max-players="game.maxPlayers"
