@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог настільних ігор (IndexedDB + Vue 3)</title>
+    <title>Каталог настільних ігор</title>
     <!-- Підключення шрифтів Comfortaa та Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +50,10 @@
                     <input type="number" v-model="newMaxPlayers" min="1" max="20" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 70px;">
                 </div>
                 <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Тривалість:</label>
+                    <input type="text" v-model="newDuration" placeholder="30–60 хв" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100px;">
+                </div>
+                <div>
                     <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Жанр:</label>
                     <select v-model="newGenre" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
                         <option value="Стратегія">Стратегія</option>
@@ -76,7 +80,6 @@
                 <h2>Популярні ігри (IndexedDB + Vue 3)</h2>
                 
                 <div style="display: flex; gap: 8px;">
-                    <!-- Скидання фільтру -->
                     <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ Скинути фільтр</button>
                 </div>
             </div>
@@ -95,7 +98,7 @@
                 <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
             </p>
 
-            <!-- Рендер карток із передачею статусу played, видаленням та можливістю змінити статус -->
+            <!-- Рендер карток з усіма полями за ТЗ -->
             <div id="games-list" class="cards">
                 <game-card 
                     v-for="game in filteredGames" 
@@ -104,10 +107,13 @@
                     :title="game.title"
                     :min-players="game.minPlayers"
                     :max-players="game.maxPlayers"
+                    :players="game.players"
+                    :duration="game.duration"
                     :genre="game.genre"
                     :description="game.description"
                     :image="game.image"
                     :played="game.played"
+                    :owned="game.owned"
                     @filter="filterByGenre"
                     @delete="handleDeleteGame"
                     @toggle-played="handleTogglePlayed"
