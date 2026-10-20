@@ -114,9 +114,11 @@
                     :image="game.image"
                     :played="game.played"
                     :owned="game.owned"
+                    :is-featured="game.isFeatured"
                     @filter="filterByGenre"
                     @delete="handleDeleteGame"
                     @toggle-played="handleTogglePlayed"
+                    @set-featured="handleSetFeatured"
                 ></game-card>
             </div>
         </section>

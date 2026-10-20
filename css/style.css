@@ -337,3 +337,67 @@ footer {
     gap: 2rem;
   }
 }
+
+/* ПРАКТИЧНА РОБОТА №12: CSS-анімації та transition */
+
+/* 1. Анімація pulse для бейджа та картки «Гра дня» */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 10px 15px -3px rgba(237, 137, 54, 0.4);
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Клас підсвічування «Гра дня» */
+.game-card--featured {
+  border: 2px solid #ed8936 !important;
+  animation: pulse 2.5s ease-in-out infinite;
+  position: relative;
+}
+
+.badge--featured {
+  background: #ed8936;
+  color: white;
+  font-weight: 700;
+  animation: badgePulse 1.5s ease-in-out infinite;
+}
+
+/* 2. Плавний transition для карток під час фільтрації та рендеру */
+.game-card {
+  transition: transform 0.3s ease, opacity 0.4s ease, box-shadow 0.3s ease;
+  will-change: transform, opacity;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Анімація появи карток списку */
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cards-enter-active {
+  animation: fadeInCard 0.4s ease-out forwards;
+}

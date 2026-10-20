@@ -1,5 +1,5 @@
-// Підтвердження успішного завантаження та виконання зовнішнього скрипта 
-console.log('script.js підключено (ЛР11)');
+
+console.log('script.js підключено (ЛР12: Анімація)');
 
 const initialBoardGames = [
   {
@@ -13,7 +13,8 @@ const initialBoardGames = [
     description: 'Класична стратегічна гра на викладання тайлів земель навколо середньовічного замку.',
     image: 'img/carcassonne.png',
     played: false,
-    owned: true
+    owned: true,
+    isFeatured: true // Прапорець "Гра дня"
   },
   {
     id: 'game-2',
@@ -26,7 +27,8 @@ const initialBoardGames = [
     description: 'Командна гра у слова та асоціації, де капітани намагаються зв\'язатися з агентами.',
     image: 'img/codenames.jpg',
     played: true,
-    owned: true
+    owned: true,
+    isFeatured: false
   },
   {
     id: 'game-3',
@@ -39,7 +41,8 @@ const initialBoardGames = [
     description: 'Захоплива сімейна пригода: збирайте картки вагонів та будуйте маршрути між містами.',
     image: 'img/ticket-to-ride.jpg',
     played: false,
-    owned: true
+    owned: true,
+    isFeatured: false
   },
   {
     id: 'game-4',
@@ -52,23 +55,24 @@ const initialBoardGames = [
     description: 'Розвивайте поселення, добувайте ресурси та торгуйте на острові Катан.',
     image: 'img/catan.jpg',
     played: true,
-    owned: true
+    owned: true,
+    isFeatured: false
   }
 ];
 
-// ПРАКТИЧНА РОБОТА №11: Сховище IndexedDB ("games", keyPath "id")
+// Робота з IndexedDB
 
 const LOCAL_STORAGE_KEY = 'boardgames_catalog_data';
 const MIGRATION_FLAG_KEY = 'boardgames_migrated_to_idb';
 const DB_NAME = 'BoardGamesDB';
 const DB_VERSION = 1;
-const STORE_NAME = 'games'; // Сховище "games" згідно з ТЗ
+const STORE_NAME = 'games';
 
 function saveToLocalStorage(items) {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
-  } catch (error) {
-    console.error('Помилка запису в localStorage:', error);
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -76,8 +80,7 @@ function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (error) {
-    console.error('Пошкоджені дані в localStorage, повертаємо порожній масив:', error);
+  } catch (e) {
     return [];
   }
 }
@@ -85,22 +88,18 @@ function loadFromLocalStorage() {
 function openDB() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
-      reject(new Error('IndexedDB не підтримується у вашому браузері.'));
+      reject(new Error('IndexedDB не підтримується.'));
       return;
     }
-
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        console.log(`Object store '${STORE_NAME}' з keyPath 'id' успішно створено.`);
       }
     };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -114,15 +113,14 @@ async function addItem(item) {
   });
 }
 
-// Редагування статусу «зіграно» через put() з тим самим id
 async function updateItem(item) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    const request = store.put(item); // put за тим самим id оновлює запис без створення дубліката
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    const req = store.put(item);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -130,9 +128,9 @@ async function getAllItems() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const request = tx.objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -148,34 +146,33 @@ async function deleteItem(id) {
 
 async function migrateLocalStorageToIDB() {
   const isMigrated = localStorage.getItem(MIGRATION_FLAG_KEY);
-
   if (!isMigrated) {
-    console.log('Початок одноразової міграції з localStorage в IndexedDB...');
     const localData = loadFromLocalStorage();
-
     if (localData.length > 0) {
       for (const game of localData) {
         await addItem(game);
       }
-      console.log(`Мігровано ${localData.length} елементів у IndexedDB.`);
     }
-
     localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
   }
 }
 
-
-// Component GameCard та Vue 3
+// Vue 3 Компоненти (ЛР12 - CSS-анімація та pulse "Гра дня")
 
 const GameCard = {
   name: 'GameCard',
-  props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned'],
-  emits: ['filter', 'delete', 'toggle-played'],
+  props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned', 'isFeatured'],
+  emits: ['filter', 'delete', 'toggle-played', 'set-featured'],
   template: `
-    <article class="game-card" :style="{ borderLeft: played ? '6px solid #38a169' : '6px solid #cbd5e0' }">
+    <article 
+      class="game-card cards-enter-active" 
+      :class="{ 'game-card--featured': isFeatured }"
+      :style="{ borderLeft: played ? '6px solid #38a169' : '6px solid #cbd5e0' }"
+    >
       <img :src="image" :alt="'Обкладинка гри ' + title">
       <div class="card-body">
         <div class="badge-group">
+          <span v-if="isFeatured" class="badge badge--featured">🔥 ГРА ДНЯ</span>
           <span class="badge badge--players">👥 {{ players || (minPlayers + '–' + maxPlayers + ' гравців') }}</span>
           <span class="badge badge--time">⏳ {{ duration || '30–60 хв' }}</span>
           <span 
@@ -191,7 +188,6 @@ const GameCard = {
         <h3>{{ title }}</h3>
         <p>{{ description }}</p>
 
-        <!-- Перемикання статусу «Зіграно» (виклики store.put()) -->
         <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
           <button 
             @click="$emit('toggle-played', id)" 
@@ -199,6 +195,14 @@ const GameCard = {
             :style="{ background: played ? '#c6f6d5' : '#edf2f7', color: played ? '#22543d' : '#4a5568' }"
           >
             {{ played ? '✅ Зіграно' : '⏳ У планах' }}
+          </button>
+
+          <button 
+            @click="$emit('set-featured', id)" 
+            style="padding: 6px 10px; background: #feebc8; color: #c05621; border: 1px solid #fbd38d; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+            title="Зробити грою дня"
+          >
+            ⭐ Гра дня
           </button>
 
           <button 
@@ -250,9 +254,7 @@ const app = createApp({
         let items = await getAllItems();
 
         if (items.length === 0) {
-          console.log('IndexedDB порожня. Первинне заповнення каталогом ігор...');
           items = [...initialBoardGames];
-
           for (const game of items) {
             await addItem(game);
           }
@@ -261,8 +263,8 @@ const app = createApp({
 
         this.games = items;
       } catch (error) {
-        console.error('Помилка роботи з IndexedDB:', error);
-        this.errorMessage = `Не вдалося отримати дані зі сховища: ${error.message || error}`;
+        console.error('Помилка IndexedDB:', error);
+        this.errorMessage = `Не вдалося отримати дані: ${error.message || error}`;
       } finally {
         this.loading = false;
       }
@@ -291,6 +293,7 @@ const app = createApp({
         genre: this.newGenre,
         played: this.newPlayed,
         owned: true,
+        isFeatured: false,
         image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(this.newTitle.slice(0, 18))}</text></svg>`,
         description: `Нова добавлена гра у жанрі ${this.newGenre}.`
       };
@@ -318,12 +321,23 @@ const app = createApp({
       const updatedGame = { ...game, played: !game.played };
 
       try {
-        await updateItem(updatedGame); // store.put(updatedGame)
+        await updateItem(updatedGame);
         game.played = updatedGame.played;
         saveToLocalStorage(this.games);
       } catch (err) {
         this.errorMessage = 'Помилка оновлення статусу в IndexedDB.';
       }
+    },
+
+    async handleSetFeatured(id) {
+      for (const game of this.games) {
+        const updatedStatus = (game.id === id);
+        if (game.isFeatured !== updatedStatus) {
+          game.isFeatured = updatedStatus;
+          await updateItem({ ...game });
+        }
+      }
+      saveToLocalStorage(this.games);
     },
 
     async handleDeleteGame(id) {
