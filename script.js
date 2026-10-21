@@ -1,6 +1,8 @@
+// ПРАКТИЧНА РОБОТА №13: SPA та клієнтська маршрутизація (Hash-based)
 
-console.log('script.js підключено (ЛР12: Анімація)');
+console.log('script.js підключено (ЛР13: SPA Router)');
 
+// Початкові власні дані каталогу настільних ігор
 const initialBoardGames = [
   {
     id: 'game-1',
@@ -14,7 +16,7 @@ const initialBoardGames = [
     image: 'img/carcassonne.png',
     played: false,
     owned: true,
-    isFeatured: true // Прапорець "Гра дня"
+    isFeatured: true
   },
   {
     id: 'game-2',
@@ -41,7 +43,7 @@ const initialBoardGames = [
     description: 'Захоплива сімейна пригода: збирайте картки вагонів та будуйте маршрути між містами.',
     image: 'img/ticket-to-ride.jpg',
     played: false,
-    owned: true,
+    owned: false,
     isFeatured: false
   },
   {
@@ -60,7 +62,7 @@ const initialBoardGames = [
   }
 ];
 
-// Робота з IndexedDB
+// Робота зі сховищем IndexedDB ("games", keyPath "id")
 
 const LOCAL_STORAGE_KEY = 'boardgames_catalog_data';
 const MIGRATION_FLAG_KEY = 'boardgames_migrated_to_idb';
@@ -157,7 +159,7 @@ async function migrateLocalStorageToIDB() {
   }
 }
 
-// Vue 3 Компоненти (ЛР12 - CSS-анімація та pulse "Гра дня")
+// Vue 3 Компонент картки гри
 
 const GameCard = {
   name: 'GameCard',
@@ -185,13 +187,19 @@ const GameCard = {
           </span>
         </div>
         
-        <h3>{{ title }}</h3>
+        <h3>
+          <a :href="'#/games/' + id" style="text-decoration: none; color: inherit;">{{ title }}</a>
+        </h3>
         <p>{{ description }}</p>
 
-        <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+        <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+          <a :href="'#/games/' + id" style="padding: 6px 10px; background: #edf2f7; color: #2b6cb0; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px;">
+            🔍 Деталі
+          </a>
+
           <button 
             @click="$emit('toggle-played', id)" 
-            style="padding: 6px 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;"
+            style="padding: 6px 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;"
             :style="{ background: played ? '#c6f6d5' : '#edf2f7', color: played ? '#22543d' : '#4a5568' }"
           >
             {{ played ? '✅ Зіграно' : '⏳ У планах' }}
@@ -199,17 +207,17 @@ const GameCard = {
 
           <button 
             @click="$emit('set-featured', id)" 
-            style="padding: 6px 10px; background: #feebc8; color: #c05621; border: 1px solid #fbd38d; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+            style="padding: 6px 8px; background: #feebc8; color: #c05621; border: 1px solid #fbd38d; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
             title="Зробити грою дня"
           >
-            ⭐ Гра дня
+            ⭐
           </button>
 
           <button 
             @click="$emit('delete', id)" 
-            style="padding: 6px 10px; background: #fff5f5; color: #e53e3e; border: 1px solid #feb2b2; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+            style="padding: 6px 8px; background: #fff5f5; color: #e53e3e; border: 1px solid #feb2b2; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
           >
-            🗑️ Видалити
+            🗑️
           </button>
         </div>
       </div>
@@ -217,16 +225,20 @@ const GameCard = {
   `
 };
 
+// Vue 3 Застосунок із підключенням Hash Router 
 const { createApp } = Vue;
 
 const app = createApp({
   data() {
     return {
+      currentPath: window.location.hash.slice(1) || '/',
+      routeParams: {},
       games: [],
       selectedGenre: 'all',
       loading: false,
       errorMessage: '',
 
+      // Поля форми додавання
       newTitle: '',
       newMinPlayers: 2,
       newMaxPlayers: 4,
@@ -237,14 +249,44 @@ const app = createApp({
     };
   },
   computed: {
+    // 1. Маршрути «/» та «/owned»
     filteredGames() {
-      if (this.selectedGenre === 'all') {
-        return this.games;
+      let result = this.games;
+      if (this.currentPath === '/owned') {
+        result = result.filter(game => game.owned === true);
       }
-      return this.games.filter(game => game.genre === this.selectedGenre);
+      if (this.selectedGenre !== 'all') {
+        result = result.filter(game => game.genre === this.selectedGenre);
+      }
+      return result;
+    },
+    // 2. Маршрут «/games/:id» — детальна картка гри
+    currentGameDetail() {
+      if (!this.routeParams.id) return null;
+      return this.games.find(g => String(g.id) === String(this.routeParams.id));
+    },
+    // Перевірка неіснуючого маршруту 404
+    isNotFound() {
+      const validPaths = ['/', '/owned', '/add'];
+      if (validPaths.includes(this.currentPath)) return false;
+      if (this.currentPath.startsWith('/games/')) return !this.currentGameDetail;
+      return true;
     }
   },
   methods: {
+    // Таблиця маршрутів та їх зіставлення (matchRoute)
+    matchRoute() {
+      const path = window.location.hash.slice(1) || '/';
+      this.currentPath = path;
+      this.routeParams = {};
+
+      // Парсинг динамічного параметра /games/:id
+      if (path.startsWith('/games/')) {
+        const id = path.split('/games/')[1];
+        this.routeParams = { id };
+      }
+    },
+
     async loadGamesFromDB() {
       this.loading = true;
       this.errorMessage = '';
@@ -253,7 +295,7 @@ const app = createApp({
         await migrateLocalStorageToIDB();
         let items = await getAllItems();
 
-        if (items.length === 0) {
+        if (!items || items.length === 0) {
           items = [...initialBoardGames];
           for (const game of items) {
             await addItem(game);
@@ -264,7 +306,7 @@ const app = createApp({
         this.games = items;
       } catch (error) {
         console.error('Помилка IndexedDB:', error);
-        this.errorMessage = `Не вдалося отримати дані: ${error.message || error}`;
+        this.errorMessage = `Не вдалося отримати дані зі сховища: ${error.message || error}`;
       } finally {
         this.loading = false;
       }
@@ -309,6 +351,8 @@ const app = createApp({
         this.newDuration = '30–60 хв';
         this.newGenre = 'Стратегія';
         this.newPlayed = false;
+        
+        window.location.hash = '#/'; // Автоматичний перехід на головну після створення
       } catch (err) {
         this.formError = 'Помилка збереження нової гри в базу IndexedDB.';
       }
@@ -345,6 +389,9 @@ const app = createApp({
         await deleteItem(id);
         this.games = this.games.filter(g => g.id !== id);
         saveToLocalStorage(this.games);
+        if (this.currentPath.startsWith('/games/')) {
+          window.location.hash = '#/';
+        }
       } catch (err) {
         alert('Помилка видалення запису з бази IndexedDB');
       }
@@ -360,7 +407,135 @@ const app = createApp({
   },
   mounted() {
     this.loadGamesFromDB();
-  }
+    this.matchRoute();
+
+    // Слухаємо зміну хеша в URL для клієнтського роутингу (hashchange)
+    window.addEventListener('hashchange', () => {
+      this.matchRoute();
+    });
+  },
+  template: `
+    <div>
+      <!-- 1. Маршрут: Сторінка додавання гри (#/add) -->
+      <section v-if="currentPath === '/add'" id="add" style="margin-bottom: 30px; padding: 20px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <h2 style="margin-top: 0;">➕ Додати нову гру в IndexedDB</h2>
+        <form @submit.prevent="handleAddGame" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Назва гри:</label>
+                <input type="text" v-model="newTitle" placeholder="Наприклад, Монополія" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Мін. гравців:</label>
+                <input type="number" v-model="newMinPlayers" min="1" max="10" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 70px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Макс. гравців:</label>
+                <input type="number" v-model="newMaxPlayers" min="1" max="20" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 70px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Тривалість:</label>
+                <input type="text" v-model="newDuration" placeholder="30–60 хв" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Жанр:</label>
+                <select v-model="newGenre" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                    <option value="Стратегія">Стратегія</option>
+                    <option value="Для вечірок">Для вечірок</option>
+                    <option value="Сімейні">Сімейні</option>
+                    <option value="Пригоди">Пригоди</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
+                <input type="checkbox" id="played-check" v-model="newPlayed">
+                <label for="played-check" style="font-size: 12px; font-weight: 600; cursor: pointer;">Зіграно</label>
+            </div>
+            <button type="submit" class="submit-btn" style="padding: 8px 16px; width: auto; background: #2b6cb0; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                Зберегти в базу
+            </button>
+        </form>
+        <p v-if="formError" style="color: #e53e3e; font-size: 13px; margin-top: 8px; font-weight: 600;">{{ formError }}</p>
+      </section>
+
+      <!-- 2. Маршрут: Деталі гри (#/games/:id) за ТЗ  -->
+      <section v-else-if="currentPath.startsWith('/games/') && currentGameDetail" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <a href="#/" style="display: inline-block; margin-bottom: 16px; color: #2b6cb0; font-weight: 600; text-decoration: none;">← Повернутися до каталогу</a>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <img :src="currentGameDetail.image" :alt="currentGameDetail.title" style="width: 250px; height: 250px; object-fit: cover; border-radius: 8px;">
+          <div style="flex: 1; min-width: 250px;">
+            <h2>{{ currentGameDetail.title }} <span v-if="currentGameDetail.isFeatured">🔥</span></h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <span class="badge badge--players">👥 {{ currentGameDetail.players || (currentGameDetail.minPlayers + '–' + currentGameDetail.maxPlayers + ' гравців') }}</span>
+              <span class="badge badge--time">⏳ {{ currentGameDetail.duration || '30–60 хв' }}</span>
+              <span class="badge" style="background: #e2e8f0; color: #2d3748;">🏷️ {{ currentGameDetail.genre }}</span>
+              <span class="badge" :style="{ background: currentGameDetail.owned ? '#c6f6d5' : '#fed7d7', color: currentGameDetail.owned ? '#22543d' : '#9b2c2c' }">
+                {{ currentGameDetail.owned ? '📦 Є в колекції (Owned)' : '🛒 Немає в наявності' }}
+              </span>
+            </div>
+            <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">{{ currentGameDetail.description }}</p>
+            <div style="margin-top: 20px;">
+              <button 
+                @click="handleTogglePlayed(currentGameDetail.id)"
+                style="padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;"
+                :style="{ background: currentGameDetail.played ? '#c6f6d5' : '#edf2f7', color: currentGameDetail.played ? '#22543d' : '#4a5568' }"
+              >
+                {{ currentGameDetail.played ? '✅ Зіграно' : '⏳ У планах' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Маршрут: Неіснуючий маршрут 404 -->
+      <section v-else-if="isNotFound" style="text-align: center; padding: 40px; background: white; border-radius: 12px;">
+        <h2 style="font-size: 36px; color: #e53e3e; margin-bottom: 8px;">404</h2>
+        <p style="font-size: 18px; color: #4a5568;">Сторінку не знайдено!</p>
+        <a href="#/" style="display: inline-block; margin-top: 16px; padding: 10px 20px; background: #2b6cb0; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">На головну</a>
+      </section>
+
+      <!-- 4. Основні маршрути: Повний список (#/) та Колекція (#/owned) -->
+      <section v-else id="games">
+        <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+            <h2>
+              {{ currentPath === '/owned' ? '📦 Моя колекція (owned: true)' : 'Популярні ігри (Каталог SPA)' }}
+            </h2>
+            <div style="display: flex; gap: 8px;">
+                <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ Скинути фільтр</button>
+            </div>
+        </div>
+
+        <p v-if="loading" style="color: #2b6cb0; font-weight: 600;">⏳ Зчитування даних із IndexedDB...</p>
+        <p v-if="errorMessage" style="color: #c92a2a; font-weight: 600; padding: 10px; background: #ffe3e3; border-radius: 8px; margin-bottom: 12px;">{{ errorMessage }}</p>
+
+        <p id="games-count">
+            Показано ігор: {{ filteredGames.length }} з {{ games.length }}
+            <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
+        </p>
+
+        <div id="games-list" class="cards">
+            <game-card 
+                v-for="game in filteredGames" 
+                :key="game.id"
+                :id="game.id"
+                :title="game.title"
+                :min-players="game.minPlayers"
+                :max-players="game.maxPlayers"
+                :players="game.players"
+                :duration="game.duration"
+                :genre="game.genre"
+                :description="game.description"
+                :image="game.image"
+                :played="game.played"
+                :owned="game.owned"
+                :is-featured="game.isFeatured"
+                @filter="filterByGenre"
+                @delete="handleDeleteGame"
+                @toggle-played="handleTogglePlayed"
+                @set-featured="handleSetFeatured"
+            ></game-card>
+        </div>
+      </section>
+    </div>
+  `
 });
 
 app.component('game-card', GameCard);

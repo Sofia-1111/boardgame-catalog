@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог настільних ігор</title>
+    <title>Каталог настільних ігор (SPA + Hash Router)</title>
     <!-- Підключення шрифтів Comfortaa та Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,106 +23,16 @@
         <h1>Каталог настільних ігор</h1>
         <nav>
             <ul>
-                <li><a href="#games">Каталог</a></li>
-                <li><a href="#add">Додати гру</a></li>
+                <li><a href="#/" data-link>Усі ігри</a></li>
+                <li><a href="#/owned" data-link>Моя колекція (Owned)</a></li>
+                <li><a href="#/add" data-link>Додати гру</a></li>
             </ul>
         </nav>
     </header>
 
-    <!-- Головний контейнер Vue-застосунку -->
+    <!-- Головний контейнер SPA-застосунку для динамічного рендеру сторінок роутера -->
     <main id="app">
-
-        <!-- Форма додавання нової гри в IndexedDB -->
-        <section id="add" style="margin-bottom: 30px; padding: 20px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-            <h2 style="margin-top: 0;">➕ Додати нову гру в IndexedDB</h2>
-            
-            <form @submit.prevent="handleAddGame" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Назва гри:</label>
-                    <input type="text" v-model="newTitle" placeholder="Наприклад, Монополія" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Мін. гравців:</label>
-                    <input type="number" v-model="newMinPlayers" min="1" max="10" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 70px;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Макс. гравців:</label>
-                    <input type="number" v-model="newMaxPlayers" min="1" max="20" required style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 70px;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Тривалість:</label>
-                    <input type="text" v-model="newDuration" placeholder="30–60 хв" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100px;">
-                </div>
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Жанр:</label>
-                    <select v-model="newGenre" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                        <option value="Стратегія">Стратегія</option>
-                        <option value="Для вечірок">Для вечірок</option>
-                        <option value="Сімейні">Сімейні</option>
-                        <option value="Пригоди">Пригоди</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 8px;">
-                    <input type="checkbox" id="played-check" v-model="newPlayed">
-                    <label for="played-check" style="font-size: 12px; font-weight: 600; cursor: pointer;">Зіграно</label>
-                </div>
-                <button type="submit" class="submit-btn" style="padding: 8px 16px; width: auto; background: #2b6cb0; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    Зберегти в базу
-                </button>
-            </form>
-
-            <p v-if="formError" style="color: #e53e3e; font-size: 13px; margin-top: 8px; font-weight: 600;">{{ formError }}</p>
-        </section>
-
-        <!-- Секція каталогу ігор під управлінням Vue 3 та IndexedDB -->
-        <section id="games">
-            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
-                <h2>Популярні ігри (IndexedDB + Vue 3)</h2>
-                
-                <div style="display: flex; gap: 8px;">
-                    <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ Скинути фільтр</button>
-                </div>
-            </div>
-
-            <!-- Індикатор завантаження даних із бази IndexedDB -->
-            <p v-if="loading" style="color: #2b6cb0; font-weight: 600;">⏳ Зчитування даних із IndexedDB...</p>
-
-            <!-- Повідомлення про помилку відкриття / доступу до IndexedDB -->
-            <p v-if="errorMessage" style="color: #c92a2a; font-weight: 600; padding: 10px; background: #ffe3e3; border-radius: 8px; margin-bottom: 12px;">
-                {{ errorMessage }}
-            </p>
-
-            <!-- Динамічний лічильник ігор -->
-            <p id="games-count">
-                Показано ігор: {{ filteredGames.length }} з {{ games.length }}
-                <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
-            </p>
-
-            <!-- Рендер карток з усіма полями за ТЗ -->
-            <div id="games-list" class="cards">
-                <game-card 
-                    v-for="game in filteredGames" 
-                    :key="game.id"
-                    :id="game.id"
-                    :title="game.title"
-                    :min-players="game.minPlayers"
-                    :max-players="game.maxPlayers"
-                    :players="game.players"
-                    :duration="game.duration"
-                    :genre="game.genre"
-                    :description="game.description"
-                    :image="game.image"
-                    :played="game.played"
-                    :owned="game.owned"
-                    :is-featured="game.isFeatured"
-                    @filter="filterByGenre"
-                    @delete="handleDeleteGame"
-                    @toggle-played="handleTogglePlayed"
-                    @set-featured="handleSetFeatured"
-                ></game-card>
-            </div>
-        </section>
-
+        <!-- Увесь вміст сторінок (#/, #/owned, #/games/:id, #/add, 404) керується шаблоном у script.js -->
     </main>
     
     <footer>
