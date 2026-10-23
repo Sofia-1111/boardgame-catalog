@@ -1,8 +1,11 @@
-// ПРАКТИЧНА РОБОТА №13: SPA та клієнтська маршрутизація (Hash-based)
+// ПРАКТИЧНА РОБОТА №14: Клієнтська частина з використанням власного Express API
 
-console.log('script.js підключено (ЛР13: SPA Router)');
+console.log('script.js підключено (ЛР14: Fetch із локального Node.js сервера)');
 
-// Початкові власні дані каталогу настільних ігор
+// URL локального Express API
+const API_URL = '/api/games';
+
+// Початкові власні дані каталогу настільних ігор (Fallback для IndexedDB)
 const initialBoardGames = [
   {
     id: 'game-1',
@@ -160,7 +163,6 @@ async function migrateLocalStorageToIDB() {
 }
 
 // Vue 3 Компонент картки гри
-
 const GameCard = {
   name: 'GameCard',
   props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned', 'isFeatured'],
@@ -225,7 +227,7 @@ const GameCard = {
   `
 };
 
-// Vue 3 Застосунок із підключенням Hash Router 
+// Vue 3 Застосунок із підключенням Hash Router та Express API (ЛР14)
 const { createApp } = Vue;
 
 const app = createApp({
@@ -274,39 +276,49 @@ const app = createApp({
     }
   },
   methods: {
-    // Таблиця маршрутів та їх зіставлення (matchRoute)
     matchRoute() {
       const path = window.location.hash.slice(1) || '/';
       this.currentPath = path;
       this.routeParams = {};
 
-      // Парсинг динамічного параметра /games/:id
       if (path.startsWith('/games/')) {
         const id = path.split('/games/')[1];
         this.routeParams = { id };
       }
     },
 
-    async loadGamesFromDB() {
+    // ЛР14: Завантаження даних із власного Node.js Express API за патерном async/await + response.ok
+    async fetchGamesFromApi() {
       this.loading = true;
       this.errorMessage = '';
 
       try {
-        await migrateLocalStorageToIDB();
-        let items = await getAllItems();
-
-        if (!items || items.length === 0) {
-          items = [...initialBoardGames];
-          for (const game of items) {
-            await addItem(game);
-          }
-          saveToLocalStorage(items);
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error(`Помилка HTTP-сервера зі статусом: ${response.status}`);
         }
+        const data = await response.json();
 
-        this.games = items;
+        // Синхронізація даних з API у локальне сховище IndexedDB
+        await migrateLocalStorageToIDB();
+        for (const item of data) {
+          await addItem(item);
+        }
+        
+        this.games = await getAllItems();
       } catch (error) {
-        console.error('Помилка IndexedDB:', error);
-        this.errorMessage = `Не вдалося отримати дані зі сховища: ${error.message || error}`;
+        console.warn('Не вдалося завантажити дані з Node.js API, використовуємо локальну IndexedDB:', error);
+        try {
+          this.games = await getAllItems();
+          if (!this.games || this.games.length === 0) {
+            this.games = [...initialBoardGames];
+            for (const g of this.games) {
+              await addItem(g);
+            }
+          }
+        } catch (dbErr) {
+          this.errorMessage = `Не вдалося отримати дані зі сховища: ${error.message || error}`;
+        }
       } finally {
         this.loading = false;
       }
@@ -352,7 +364,7 @@ const app = createApp({
         this.newGenre = 'Стратегія';
         this.newPlayed = false;
         
-        window.location.hash = '#/'; // Автоматичний перехід на головну після створення
+        window.location.hash = '#/';
       } catch (err) {
         this.formError = 'Помилка збереження нової гри в базу IndexedDB.';
       }
@@ -406,10 +418,9 @@ const app = createApp({
     }
   },
   mounted() {
-    this.loadGamesFromDB();
+    this.fetchGamesFromApi();
     this.matchRoute();
 
-    // Слухаємо зміну хеша в URL для клієнтського роутингу (hashchange)
     window.addEventListener('hashchange', () => {
       this.matchRoute();
     });
@@ -456,7 +467,7 @@ const app = createApp({
         <p v-if="formError" style="color: #e53e3e; font-size: 13px; margin-top: 8px; font-weight: 600;">{{ formError }}</p>
       </section>
 
-      <!-- 2. Маршрут: Деталі гри (#/games/:id) за ТЗ  -->
+      <!-- 2. Маршрут: Деталі гри (#/games/:id) -->
       <section v-else-if="currentPath.startsWith('/games/') && currentGameDetail" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <a href="#/" style="display: inline-block; margin-bottom: 16px; color: #2b6cb0; font-weight: 600; text-decoration: none;">← Повернутися до каталогу</a>
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -496,14 +507,14 @@ const app = createApp({
       <section v-else id="games">
         <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
             <h2>
-              {{ currentPath === '/owned' ? '📦 Моя колекція (owned: true)' : 'Популярні ігри (Каталог SPA)' }}
+              {{ currentPath === '/owned' ? '📦 Моя колекція (owned: true)' : 'Популярні ігри (Express REST API)' }}
             </h2>
             <div style="display: flex; gap: 8px;">
                 <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ Скинути фільтр</button>
             </div>
         </div>
 
-        <p v-if="loading" style="color: #2b6cb0; font-weight: 600;">⏳ Зчитування даних із IndexedDB...</p>
+        <p v-if="loading" style="color: #2b6cb0; font-weight: 600;">⏳ Отримання даних з Express API (localhost:3000)...</p>
         <p v-if="errorMessage" style="color: #c92a2a; font-weight: 600; padding: 10px; background: #ffe3e3; border-radius: 8px; margin-bottom: 12px;">{{ errorMessage }}</p>
 
         <p id="games-count">

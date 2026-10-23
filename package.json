@@ -1,0 +1,25 @@
+{
+  "name": "boardgame-catalog",
+  "version": "1.0.0",
+  "description": "Застосунок для перегляду та фільтрації настільних ігор.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sofia-1111/boardgame-catalog.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Sofia-1111/boardgame-catalog/issues"
+  },
+  "homepage": "https://github.com/Sofia-1111/boardgame-catalog#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  }
+}
