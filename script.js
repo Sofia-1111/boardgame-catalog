@@ -1,5 +1,4 @@
-
-console.log('script.js підключено (ЛР12: Анімація)');
+console.log('script.js підключено (ЛР12: Анімація з transition-group та Pulse)');
 
 const initialBoardGames = [
   {
@@ -157,15 +156,14 @@ async function migrateLocalStorageToIDB() {
   }
 }
 
-// Vue 3 Компоненти (ЛР12 - CSS-анімація та pulse "Гра дня")
-
+// Vue 3 Компонент картки гри
 const GameCard = {
   name: 'GameCard',
   props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned', 'isFeatured'],
   emits: ['filter', 'delete', 'toggle-played', 'set-featured'],
   template: `
     <article 
-      class="game-card cards-enter-active" 
+      class="game-card" 
       :class="{ 'game-card--featured': isFeatured }"
       :style="{ borderLeft: played ? '6px solid #38a169' : '6px solid #cbd5e0' }"
     >
@@ -360,7 +358,51 @@ const app = createApp({
   },
   mounted() {
     this.loadGamesFromDB();
-  }
+  },
+  template: `
+    <div>
+      <section id="games">
+        <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px;">
+          <h2>Каталог настільних ігор</h2>
+          <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568;">❌ Скинути фільтр</button>
+        </div>
+
+        <p id="games-count">
+          Показано ігор: {{ filteredGames.length }} з {{ games.length }}
+          <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
+        </p>
+
+        <!-- Головне виправлення ЛР12: використовуємо transition-group -->
+        <transition-group 
+          name="cards" 
+          tag="div" 
+          id="games-list" 
+          class="cards"
+        >
+          <game-card 
+            v-for="game in filteredGames" 
+            :key="game.id"
+            :id="game.id"
+            :title="game.title"
+            :min-players="game.minPlayers"
+            :max-players="game.maxPlayers"
+            :players="game.players"
+            :duration="game.duration"
+            :genre="game.genre"
+            :description="game.description"
+            :image="game.image"
+            :played="game.played"
+            :owned="game.owned"
+            :is-featured="game.isFeatured"
+            @filter="filterByGenre"
+            @delete="handleDeleteGame"
+            @toggle-played="handleTogglePlayed"
+            @set-featured="handleSetFeatured"
+          ></game-card>
+        </transition-group>
+      </section>
+    </div>
+  `
 });
 
 app.component('game-card', GameCard);
