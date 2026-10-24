@@ -21,7 +21,7 @@
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/*Базовий reset та захист зображень */
+/* Базовий reset та захист зображень */
 *,
 *::before,
 *::after {
@@ -43,7 +43,7 @@ img {
   display: block;
 }
 
-/*Header та Навігація */
+/* Header та Навігація */
 header {
   background-color: var(--color-primary);
   color: #ffffff;
@@ -150,11 +150,6 @@ section h2 {
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
 }
 
-/* 
-   Чітка вимога:
-   Кнопки фільтрів — контрастний акцентний колір (#ea580c),
-   область натискання мінімум 44х44px (touch target WCAG 2.5.5).
-*/
 .submit-btn {
   background-color: var(--color-accent);
   color: #ffffff;
@@ -180,17 +175,16 @@ section h2 {
   box-shadow: 0 6px 14px rgba(234, 88, 12, 0.35);
 }
 
-/* Нечітка вимога:
-   «Має виглядати як каталог, яким приємно гортати» — грайлива округла
-   типографіка Comfortaa для жирних назв ігор проти нейтрального Inter для описів.
-   Бейджі кількості гравців/часу та плавний ефект підняття коробки при hover. */
+/* Каталог та Картки ігор (Оптимізовано для transition-group) */
 .cards {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1.5rem;
+  position: relative; /* Необхідно для абсолютно відпозиційованих елементів при зниканні */
 }
 
 .game-card {
+  width: 100%; /* Мобільна версія по замовчуванню */
   background-color: var(--bg-surface);
   border-radius: 14px;
   overflow: hidden;
@@ -198,7 +192,8 @@ section h2 {
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .game-card:hover {
@@ -248,7 +243,6 @@ section h2 {
   color: #3730a3;
 }
 
-/* Жирна назва гри з грайливим шрифтом Comfortaa */
 .game-card h3 {
   margin: 0 0 0.5rem 0;
   font-family: var(--font-heading);
@@ -257,7 +251,6 @@ section h2 {
   color: var(--color-primary);
 }
 
-/* Нейтральний, легко читабельний опис Inter */
 .game-card p {
   margin: 0;
   font-family: var(--font-body);
@@ -284,7 +277,7 @@ footer {
   margin-top: 3rem;
 }
 
-/* Планшетний breakpoint (min-width: 600px) */
+/* Responsive breakpoints */
 @media (min-width: 600px) {
   header {
     flex-direction: row;
@@ -316,13 +309,11 @@ footer {
     align-self: flex-end;
   }
 
-  .cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+  .game-card {
+    width: calc(50% - 0.75rem); /* 2 колонки на планшетах */
   }
 }
 
-/* Десктопний breakpoint (min-width: 1024px) */
 @media (min-width: 1024px) {
   header h1 {
     font-size: 2.1rem;
@@ -332,23 +323,22 @@ footer {
     padding: 2.5rem 2rem;
   }
 
-  .cards {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 2rem;
+  .game-card {
+    width: calc(33.333% - 1rem); /* 3 колонки на десктопі */
   }
 }
 
-/* ПРАКТИЧНА РОБОТА №12: CSS-анімації та transition */
+/* ПРАКТИЧНА РОБОТА №12: Виправлені CSS-анімації та Vue Transition Group*/
 
-/* 1. Анімація pulse для бейджа та картки «Гра дня» */
+/* 1. Анімація pulse для «Гри дня» та бейджа */
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
   50% {
-    transform: scale(1.03);
-    box-shadow: 0 10px 15px -3px rgba(237, 137, 54, 0.4);
+    transform: scale(1.02);
+    box-shadow: 0 0 18px rgba(237, 137, 54, 0.5);
   }
 }
 
@@ -357,47 +347,60 @@ footer {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
 }
 
-/* Клас підсвічування «Гра дня» */
 .game-card--featured {
   border: 2px solid #ed8936 !important;
-  animation: pulse 2.5s ease-in-out infinite;
+  animation: pulse 2.5s ease-in-out infinite !important;
   position: relative;
 }
 
 .badge--featured {
   background: #ed8936;
-  color: white;
+  color: #ffffff;
   font-weight: 700;
   animation: badgePulse 1.5s ease-in-out infinite;
 }
 
-/* 2. Плавний transition для карток під час фільтрації та рендеру */
-.game-card {
-  transition: transform 0.3s ease, opacity 0.4s ease, box-shadow 0.3s ease;
-  will-change: transform, opacity;
+/* 2. Анімація плавного переходу під час фільтрації (Vue <transition-group>) */
+.cards-enter-from,
+.cards-leave-to {
+  opacity: 0;
+  transform: translateY(30px) scale(0.85);
 }
 
-.game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+.cards-enter-active,
+.cards-leave-active {
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-/* Анімація появи карток списку */
-@keyframes fadeInCard {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
+/* Плавний зсув сусідніх карток */
+.cards-move {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Абсолютна позиція під час вибування з фіксацією розрахункової ширини */
+.cards-leave-active {
+  position: absolute;
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .cards-leave-active {
+    width: calc(33.333% - 1rem);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+}
+
+@media (min-width: 600px) and (max-width: 1023px) {
+  .cards-leave-active {
+    width: calc(50% - 0.75rem);
   }
 }
 
-.cards-enter-active {
-  animation: fadeInCard 0.4s ease-out forwards;
+@media (max-width: 599px) {
+  .cards-leave-active {
+    width: 100%;
+  }
 }
