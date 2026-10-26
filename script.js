@@ -1,6 +1,6 @@
-console.log('script.js підключено (ЛР15: Безпека клієнтських застосунків - Захист від XSS та безпечне сховище)');
+console.log('script.js підключено (ЛР14 & ЛР15: Інтеграція з REST API, IndexedDB та Захист від XSS)');
 
-// Функція екранування спецсимволів HTML (ЛР15: Допоміжна утиліта захисту від XSS)
+// Допоміжна утиліта захисту від XSS (ЛР15)
 function escapeHtml(str) {
   if (!str) return '';
   const map = {
@@ -233,7 +233,7 @@ const { createApp } = Vue;
 const app = createApp({
   data() {
     return {
-      currentView: 'all', // Режими: 'all', 'owned', 'add'
+      currentView: 'all', // Вкладки: 'all', 'owned', 'add'
       games: [],
       selectedGenre: 'all',
       loading: false,
@@ -252,12 +252,10 @@ const app = createApp({
     filteredGames() {
       let list = this.games;
 
-      // Якщо перейшли у вкладку "Моя колекція", показуємо тільки owned === true
       if (this.currentView === 'owned') {
         list = list.filter(game => game.owned);
       }
 
-      // Фільтрація за вибраним жанром
       if (this.selectedGenre !== 'all') {
         list = list.filter(game => game.genre === this.selectedGenre);
       }
@@ -269,6 +267,26 @@ const app = createApp({
     async loadGamesFromDB() {
       this.loading = true;
       this.errorMessage = '';
+
+      // REST API запит зі створенням фолбеку на IndexedDB (ЛР14)
+      try {
+        console.log('Спроба виконанння запиту fetch(/api/games)...');
+        const res = await fetch('/api/games');
+        if (res.ok) {
+          const apiGames = await res.json();
+          console.log('Дані успішно отримано з API /api/games:', apiGames);
+          if (Array.isArray(apiGames) && apiGames.length > 0) {
+            this.games = apiGames;
+            for (const g of apiGames) {
+              await addItem(g);
+            }
+            saveToLocalStorage(apiGames);
+            return;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Сервер /api/games недоступний (або розгортання статичне). Беремо дані з IndexedDB:', apiErr);
+      }
 
       try {
         await migrateLocalStorageToIDB();
@@ -294,10 +312,7 @@ const app = createApp({
     async handleAddGame() {
       this.formError = '';
 
-      // Зберігаємо чистий текст (Vue 3 автоматично захищає від XSS при виводі {{ title }})
-      const cleanTitle = this.newTitle.trim();
-
-      if (!cleanTitle) {
+      if (!this.newTitle.trim()) {
         this.formError = 'Будь ласка, вкажіть назву гри!';
         return;
       }
@@ -307,29 +322,30 @@ const app = createApp({
         return;
       }
 
-      // Створення об'єкта гри
+      // Явний виклик escapeHtml для виконання вимоги ЛР15
+      const safeTitle = escapeHtml(this.newTitle.trim());
+      const safeGenre = escapeHtml(this.newGenre);
+
       const newGame = {
         id: `game-${Date.now()}`,
-        title: cleanTitle,
+        title: safeTitle,
         minPlayers: Number(this.newMinPlayers),
         maxPlayers: Number(this.newMaxPlayers),
         players: `${this.newMinPlayers}–${this.newMaxPlayers} гравців`,
         duration: this.newDuration || '30–60 хв',
-        genre: this.newGenre,
+        genre: safeGenre,
         played: this.newPlayed,
         owned: true,
         isFeatured: false,
-        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(cleanTitle.slice(0, 18))}</text></svg>`,
-        description: `Нова добавлена гра у жанрі ${this.newGenre}.`
+        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(safeTitle.slice(0, 18))}</text></svg>`,
+        description: `Нова добавлена гра у жанрі ${safeGenre}.`
       };
 
       try {
-        // Збереження у сховище
         await addItem(newGame);
         this.games.push(newGame);
         saveToLocalStorage(this.games);
 
-        // Очищення форми та повернення на головну сторінку
         this.newTitle = '';
         this.newMinPlayers = 2;
         this.newMaxPlayers = 4;
@@ -388,7 +404,115 @@ const app = createApp({
   },
   mounted() {
     this.loadGamesFromDB();
-  }
+  },
+  template: `
+    <div>
+      <!-- Навігаційні кнопки -->
+      <header style="margin-bottom: 24px;">
+        <nav style="display: flex; gap: 12px; margin-top: 16px;">
+          <button 
+            @click="currentView = 'all'" 
+            class="submit-btn" 
+            :style="{ background: currentView === 'all' ? '#3182ce' : '#cbd5e0', color: currentView === 'all' ? '#fff' : '#2d3748', width: 'auto' }"
+          >
+             Усі ігри
+          </button>
+          <button 
+            @click="currentView = 'owned'" 
+            class="submit-btn" 
+            :style="{ background: currentView === 'owned' ? '#3182ce' : '#cbd5e0', color: currentView === 'owned' ? '#fff' : '#2d3748', width: 'auto' }"
+          >
+             Моя колекція
+          </button>
+          <button 
+            @click="currentView = 'add'" 
+            class="submit-btn" 
+            :style="{ background: currentView === 'add' ? '#38a169' : '#cbd5e0', color: currentView === 'add' ? '#fff' : '#2d3748', width: 'auto' }"
+          >
+             Додати нову гру
+          </button>
+        </nav>
+      </header>
+
+      <!-- Форма додавання нової гри -->
+      <section v-if="currentView === 'add'" style="background: #f7fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+        <h3 style="margin-top: 0;">Додати нову гру в каталог</h3>
+        <form @submit.prevent="handleAddGame">
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 4px;">Назва гри:</label>
+            <input type="text" v-model="newTitle" placeholder="Введіть назву гри..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e0;" required>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+            <div style="flex: 1;">
+              <label style="display: block; font-weight: 600; margin-bottom: 4px;">Мін. гравців:</label>
+              <input type="number" v-model="newMinPlayers" min="1" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e0;">
+            </div>
+            <div style="flex: 1;">
+              <label style="display: block; font-weight: 600; margin-bottom: 4px;">Макс. гравців:</label>
+              <input type="number" v-model="newMaxPlayers" min="1" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e0;">
+            </div>
+            <div style="flex: 1;">
+              <label style="display: block; font-weight: 600; margin-bottom: 4px;">Жанр:</label>
+              <select v-model="newGenre" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e0;">
+                <option value="Стратегія">Стратегія</option>
+                <option value="Для вечірок">Для вечірок</option>
+                <option value="Сімейні">Сімейні</option>
+                <option value="Карткові">Карткові</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="formError" style="color: #e53e3e; font-weight: 600; margin-bottom: 12px;">{{ formError }}</div>
+
+          <button type="submit" class="submit-btn" style="width: 100%; padding: 10px; background: #38a169; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            Зберегти гру
+          </button>
+        </form>
+      </section>
+
+      <!-- Каталог ігор -->
+      <section v-else id="games">
+        <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px;">
+          <h2>Каталог настільних ігор</h2>
+          <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568;">❌ Скинути фільтр</button>
+        </div>
+
+        <p id="games-count">
+          Показано ігор: {{ filteredGames.length }} з {{ games.length }}
+          <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
+        </p>
+
+        <transition-group 
+          name="cards" 
+          tag="div" 
+          id="games-list" 
+          class="cards"
+        >
+          <game-card 
+            v-for="game in filteredGames" 
+            :key="game.id"
+            :id="game.id"
+            :title="game.title"
+            :min-players="game.minPlayers"
+            :max-players="game.maxPlayers"
+            :players="game.players"
+            :duration="game.duration"
+            :genre="game.genre"
+            :description="game.description"
+            :image="game.image"
+            :played="game.played"
+            :owned="game.owned"
+            :is-featured="game.isFeatured"
+            @filter="filterByGenre"
+            @delete="handleDeleteGame"
+            @toggle-played="handleTogglePlayed"
+            @set-featured="handleSetFeatured"
+          ></game-card>
+        </transition-group>
+      </section>
+    </div>
+  `
 });
 
 app.component('game-card', GameCard);
