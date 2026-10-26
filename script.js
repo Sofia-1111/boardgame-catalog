@@ -1,4 +1,17 @@
-console.log('script.js підключено (ЛР12: Анімація з transition-group та Pulse)');
+console.log('script.js підключено (ЛР15: Безпека клієнтських застосунків - Захист від XSS та безпечне сховище)');
+
+// Функція екранування спецсимволів HTML (ЛР15: Допоміжна утиліта захисту від XSS)
+function escapeHtml(str) {
+  if (!str) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+  return String(str).replace(/[&<>"']/g, (ch) => map[ch]);
+}
 
 const initialBoardGames = [
   {
@@ -13,7 +26,7 @@ const initialBoardGames = [
     image: 'img/carcassonne.png',
     played: false,
     owned: true,
-    isFeatured: true // Прапорець "Гра дня"
+    isFeatured: true
   },
   {
     id: 'game-2',
@@ -59,7 +72,7 @@ const initialBoardGames = [
   }
 ];
 
-// Робота з IndexedDB
+// Робота з IndexedDB та LocalStorage
 
 const LOCAL_STORAGE_KEY = 'boardgames_catalog_data';
 const MIGRATION_FLAG_KEY = 'boardgames_migrated_to_idb';
@@ -220,6 +233,7 @@ const { createApp } = Vue;
 const app = createApp({
   data() {
     return {
+      currentView: 'all', // Режими: 'all', 'owned', 'add'
       games: [],
       selectedGenre: 'all',
       loading: false,
@@ -236,10 +250,19 @@ const app = createApp({
   },
   computed: {
     filteredGames() {
-      if (this.selectedGenre === 'all') {
-        return this.games;
+      let list = this.games;
+
+      // Якщо перейшли у вкладку "Моя колекція", показуємо тільки owned === true
+      if (this.currentView === 'owned') {
+        list = list.filter(game => game.owned);
       }
-      return this.games.filter(game => game.genre === this.selectedGenre);
+
+      // Фільтрація за вибраним жанром
+      if (this.selectedGenre !== 'all') {
+        list = list.filter(game => game.genre === this.selectedGenre);
+      }
+
+      return list;
     }
   },
   methods: {
@@ -271,7 +294,10 @@ const app = createApp({
     async handleAddGame() {
       this.formError = '';
 
-      if (!this.newTitle.trim()) {
+      // Зберігаємо чистий текст (Vue 3 автоматично захищає від XSS при виводі {{ title }})
+      const cleanTitle = this.newTitle.trim();
+
+      if (!cleanTitle) {
         this.formError = 'Будь ласка, вкажіть назву гри!';
         return;
       }
@@ -281,9 +307,10 @@ const app = createApp({
         return;
       }
 
+      // Створення об'єкта гри
       const newGame = {
         id: `game-${Date.now()}`,
-        title: this.newTitle.trim(),
+        title: cleanTitle,
         minPlayers: Number(this.newMinPlayers),
         maxPlayers: Number(this.newMaxPlayers),
         players: `${this.newMinPlayers}–${this.newMaxPlayers} гравців`,
@@ -292,21 +319,24 @@ const app = createApp({
         played: this.newPlayed,
         owned: true,
         isFeatured: false,
-        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(this.newTitle.slice(0, 18))}</text></svg>`,
+        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(cleanTitle.slice(0, 18))}</text></svg>`,
         description: `Нова добавлена гра у жанрі ${this.newGenre}.`
       };
 
       try {
+        // Збереження у сховище
         await addItem(newGame);
         this.games.push(newGame);
         saveToLocalStorage(this.games);
 
+        // Очищення форми та повернення на головну сторінку
         this.newTitle = '';
         this.newMinPlayers = 2;
         this.newMaxPlayers = 4;
         this.newDuration = '30–60 хв';
         this.newGenre = 'Стратегія';
         this.newPlayed = false;
+        this.currentView = 'all'; 
       } catch (err) {
         this.formError = 'Помилка збереження нової гри в базу IndexedDB.';
       }
@@ -358,51 +388,7 @@ const app = createApp({
   },
   mounted() {
     this.loadGamesFromDB();
-  },
-  template: `
-    <div>
-      <section id="games">
-        <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px;">
-          <h2>Каталог настільних ігор</h2>
-          <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568;">❌ Скинути фільтр</button>
-        </div>
-
-        <p id="games-count">
-          Показано ігор: {{ filteredGames.length }} з {{ games.length }}
-          <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
-        </p>
-
-        <!-- Головне виправлення ЛР12: використовуємо transition-group -->
-        <transition-group 
-          name="cards" 
-          tag="div" 
-          id="games-list" 
-          class="cards"
-        >
-          <game-card 
-            v-for="game in filteredGames" 
-            :key="game.id"
-            :id="game.id"
-            :title="game.title"
-            :min-players="game.minPlayers"
-            :max-players="game.maxPlayers"
-            :players="game.players"
-            :duration="game.duration"
-            :genre="game.genre"
-            :description="game.description"
-            :image="game.image"
-            :played="game.played"
-            :owned="game.owned"
-            :is-featured="game.isFeatured"
-            @filter="filterByGenre"
-            @delete="handleDeleteGame"
-            @toggle-played="handleTogglePlayed"
-            @set-featured="handleSetFeatured"
-          ></game-card>
-        </transition-group>
-      </section>
-    </div>
-  `
+  }
 });
 
 app.component('game-card', GameCard);
