@@ -1,4 +1,4 @@
-console.log('script.js підключено (ЛР12: Анімація з transition-group та Pulse)');
+console.log('script.js підключено (ЛР14: REST API Інтеграція з /api/games + IndexedDB)');
 
 const initialBoardGames = [
   {
@@ -13,7 +13,7 @@ const initialBoardGames = [
     image: 'img/carcassonne.png',
     played: false,
     owned: true,
-    isFeatured: true // Прапорець "Гра дня"
+    isFeatured: true
   },
   {
     id: 'game-2',
@@ -247,6 +247,27 @@ const app = createApp({
       this.loading = true;
       this.errorMessage = '';
 
+      // --- ДОДАНО ЛОГІКУ API /api/games ---
+      try {
+        console.log('Спроба виконанння запиту fetch(/api/games)...');
+        const res = await fetch('/api/games');
+        if (res.ok) {
+          const apiGames = await res.json();
+          console.log('Дані успішно отримано з API /api/games:', apiGames);
+          if (Array.isArray(apiGames) && apiGames.length > 0) {
+            this.games = apiGames;
+            for (const g of apiGames) {
+              await addItem(g);
+            }
+            saveToLocalStorage(apiGames);
+            return;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Сервер /api/games недоступний (або розгортання статичне). Беремо дані з IndexedDB:', apiErr);
+      }
+      // --------------------------------------------------------
+
       try {
         await migrateLocalStorageToIDB();
         let items = await getAllItems();
@@ -372,7 +393,6 @@ const app = createApp({
           <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
         </p>
 
-        <!-- Головне виправлення ЛР12: використовуємо transition-group -->
         <transition-group 
           name="cards" 
           tag="div" 
