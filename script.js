@@ -169,7 +169,7 @@ async function migrateLocalStorageToIDB() {
   }
 }
 
-// Vue 3 Компонент картки гри
+// Vue 3 Компонент картки гри (ВИПРАВЛЕНО: v-html утилізує заздалегідь екрановані дані)
 const GameCard = {
   name: 'GameCard',
   props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned', 'isFeatured'],
@@ -191,12 +191,12 @@ const GameCard = {
             style="cursor: pointer; background: #e2e8f0; color: #2d3748; font-weight: 600;"
             title="Натисніть для фільтрації за цим жанром"
             @click="$emit('filter', genre)"
+            v-html="'🏷️ ' + genre"
           >
-            🏷️ {{ genre }}
           </span>
         </div>
         
-        <h3>{{ title }}</h3>
+        <h3 v-html="title"></h3>
         <p>{{ description }}</p>
 
         <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
@@ -322,7 +322,7 @@ const app = createApp({
         return;
       }
 
-      // Явний виклик escapeHtml для виконання вимоги ЛР15
+      // Екранування вхідних даних через escapeHtml (ЛР15)
       const safeTitle = escapeHtml(this.newTitle.trim());
       const safeGenre = escapeHtml(this.newGenre);
 
@@ -415,21 +415,21 @@ const app = createApp({
             class="submit-btn" 
             :style="{ background: currentView === 'all' ? '#3182ce' : '#cbd5e0', color: currentView === 'all' ? '#fff' : '#2d3748', width: 'auto' }"
           >
-             Усі ігри
+            📚 Усі ігри
           </button>
           <button 
             @click="currentView = 'owned'" 
             class="submit-btn" 
             :style="{ background: currentView === 'owned' ? '#3182ce' : '#cbd5e0', color: currentView === 'owned' ? '#fff' : '#2d3748', width: 'auto' }"
           >
-             Моя колекція
+            📦 Моя колекція
           </button>
           <button 
             @click="currentView = 'add'" 
             class="submit-btn" 
             :style="{ background: currentView === 'add' ? '#38a169' : '#cbd5e0', color: currentView === 'add' ? '#fff' : '#2d3748', width: 'auto' }"
           >
-             Додати нову гру
+            ➕ Додати нову гру
           </button>
         </nav>
       </header>

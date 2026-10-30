@@ -3,123 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог настільних ігор (SPA + Hash Router)</title>
+    <title>Каталог настільних ігор</title>
     <!-- Підключення шрифтів Comfortaa та Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Підключення Vue 3 через CDN із підтримкою DevTools -->
+    <!-- Підключення Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script>
-      window.__VUE_DEVTOOLS_GLOBAL_HOOK__ && window.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue;
-    </script>
     <script src="script.js" defer></script>
 </head>
-<body>
+<body style="margin: 0; padding: 20px; font-family: 'Inter', sans-serif;">
 
-    <!-- Головний контейнер Vue 3 -->
-    <main id="app">
-        <header>
-            <h1>Каталог настільних ігор</h1>
-            <nav>
-                <ul>
-                    <li><a href="#/" @click="currentView = 'all'">Усі ігри</a></li>
-                    <li><a href="#/owned" @click="currentView = 'owned'">Моя колекція (Owned)</a></li>
-                    <li><a href="#/add" @click="currentView = 'add'">Додати гру</a></li>
-                </ul>
-            </nav>
-        </header>
+    <!-- Порожній контейнер: Vue 3 підставить увесь шаблон (кнопки, форму, каталог) сюди з script.js -->
+    <div id="app"></div>
 
-        <!-- Блок додавання нової гри (показується при натисканні на "Додати гру") -->
-        <section v-if="currentView === 'add'" class="add-game-section" style="max-width: 600px; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <h2>Додати нову гру в каталог</h2>
-            <form @submit.prevent="handleAddGame" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 4px;">Назва гри:</label>
-                    <input type="text" v-model="newTitle" placeholder="Введіть назву гри..." required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                </div>
-
-                <div style="display: flex; gap: 12px;">
-                    <div style="flex: 1;">
-                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">Мін. гравців:</label>
-                        <input type="number" v-model="newMinPlayers" min="1" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="font-weight: 600; display: block; margin-bottom: 4px;">Макс. гравців:</label>
-                        <input type="number" v-model="newMaxPlayers" min="1" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                </div>
-
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 4px;">Тривалість:</label>
-                    <input type="text" v-model="newDuration" placeholder="наприклад, 30–60 хв" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                </div>
-
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 4px;">Жанр:</label>
-                    <select v-model="newGenre" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="Стратегія">Стратегія</option>
-                        <option value="Для вечірок">Для вечірок</option>
-                        <option value="Сімейні">Сімейні</option>
-                        <option value="Економічні">Економічні</option>
-                    </select>
-                </div>
-
-                <div v-if="formError" style="color: #e53e3e; font-weight: 600;">
-                    {{ formError }}
-                </div>
-
-                <button type="submit" class="submit-btn" style="padding: 10px 16px; background: #3182ce; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px;">
-                    ➕ Створити картку
-                </button>
-            </form>
-        </section>
-
-        <!-- Головний каталог ігор (показується для "Усі ігри" або "Моя колекція") -->
-        <section v-else id="games">
-            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px;">
-                <h2>{{ currentView === 'owned' ? 'Моя колекція (Owned)' : 'Каталог настільних ігор' }}</h2>
-                <button v-if="selectedGenre !== 'all'" @click="resetFilter" class="submit-btn" style="padding: 8px 16px; width: auto; background: #4a5568;">❌ Скинути фільтр</button>
-            </div>
-
-            <p id="games-count">
-                Показано ігор: {{ filteredGames.length }} з {{ games.length }}
-                <span v-if="selectedGenre !== 'all'"> (Фільтр за жанром: <strong>{{ selectedGenre }}</strong>)</span>
-            </p>
-
-            <transition-group 
-                name="cards" 
-                tag="div" 
-                id="games-list" 
-                class="cards"
-            >
-                <game-card 
-                    v-for="game in filteredGames" 
-                    :key="game.id"
-                    :id="game.id"
-                    :title="game.title"
-                    :min-players="game.minPlayers"
-                    :max-players="game.maxPlayers"
-                    :players="game.players"
-                    :duration="game.duration"
-                    :genre="game.genre"
-                    :description="game.description"
-                    :image="game.image"
-                    :played="game.played"
-                    :owned="game.owned"
-                    :is-featured="game.isFeatured"
-                    @filter="filterByGenre"
-                    @delete="handleDeleteGame"
-                    @toggle-played="handleTogglePlayed"
-                    @set-featured="handleSetFeatured"
-                ></game-card>
-            </transition-group>
-        </section>
-    </main>
-    
-    <footer>
+    <footer style="margin-top: 40px; text-align: center; color: #718096; font-size: 14px;">
         <p>&copy; 2026 Каталог настільних ігор. Автор: Шаповал Софія, ІП-54.</p>
     </footer>
 
