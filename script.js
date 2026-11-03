@@ -169,7 +169,7 @@ async function migrateLocalStorageToIDB() {
   }
 }
 
-// Vue 3 Компонент картки гри (ВИПРАВЛЕНО: v-html утилізує заздалегідь екрановані дані)
+// Vue 3 Компонент картки гри (ВИПРАВЛЕНО: Декларативна інтерполяція {{ title }} для захисту від XSS з усіх джерел)
 const GameCard = {
   name: 'GameCard',
   props: ['id', 'title', 'minPlayers', 'maxPlayers', 'players', 'duration', 'genre', 'description', 'image', 'played', 'owned', 'isFeatured'],
@@ -191,12 +191,12 @@ const GameCard = {
             style="cursor: pointer; background: #e2e8f0; color: #2d3748; font-weight: 600;"
             title="Натисніть для фільтрації за цим жанром"
             @click="$emit('filter', genre)"
-            v-html="'🏷️ ' + genre"
           >
+            🏷️ {{ genre }}
           </span>
         </div>
         
-        <h3 v-html="title"></h3>
+        <h3>{{ title }}</h3>
         <p>{{ description }}</p>
 
         <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
@@ -322,23 +322,23 @@ const app = createApp({
         return;
       }
 
-      // Екранування вхідних даних через escapeHtml (ЛР15)
-      const safeTitle = escapeHtml(this.newTitle.trim());
-      const safeGenre = escapeHtml(this.newGenre);
+      // Зберігаємо вихідні дані без додаткового екранування (безпека реалізована через {{ title }} у шаблоні)
+      const rawTitle = this.newTitle.trim();
+      const rawGenre = this.newGenre;
 
       const newGame = {
         id: `game-${Date.now()}`,
-        title: safeTitle,
+        title: rawTitle,
         minPlayers: Number(this.newMinPlayers),
         maxPlayers: Number(this.newMaxPlayers),
         players: `${this.newMinPlayers}–${this.newMaxPlayers} гравців`,
         duration: this.newDuration || '30–60 хв',
-        genre: safeGenre,
+        genre: rawGenre,
         played: this.newPlayed,
         owned: true,
         isFeatured: false,
-        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(safeTitle.slice(0, 18))}</text></svg>`,
-        description: `Нова добавлена гра у жанрі ${safeGenre}.`
+        image: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="100%" height="100%" fill="%23e2e8f0"/><text x="50%" y="45%" font-family="sans-serif" font-size="48" text-anchor="middle" fill="%234a5568">🎲</text><text x="50%" y="65%" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="%232d3748">${encodeURIComponent(rawTitle.slice(0, 18))}</text></svg>`,
+        description: `Нова добавлена гра у жанрі ${rawGenre}.`
       };
 
       try {
